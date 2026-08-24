@@ -75,7 +75,8 @@ public actor BrandIconResolver {
                 .filter { $0.confidence >= configuration.minimumConfidence }
                 .prefix(configuration.maximumCandidates)
                 .map { $0 },
-            preferring: configuration.effectivePreferredSources
+            preferring: configuration.effectivePreferredSources,
+            preferenceThreshold: configuration.preferenceThreshold
         )
         cache[key] = result
         return result

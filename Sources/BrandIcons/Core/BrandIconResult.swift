@@ -8,15 +8,28 @@ public struct BrandIconResult: Hashable, Sendable {
     /// Candidates sorted by descending confidence. May be empty.
     public let candidates: [BrandIconCandidate]
 
+    /// - Parameters:
+    ///   - preferredSources: Sources allowed to outrank a higher scoring candidate, best first.
+    ///   - preferenceThreshold: The confidence a preferred candidate must reach to do so. A
+    ///     preferred source that is unsure about the brand sorts on its score like anything else.
     public init(
         query: String,
         candidates: [BrandIconCandidate],
-        preferring preferredSources: [BrandIconSource] = []
+        preferring preferredSources: [BrandIconSource] = [],
+        preferenceThreshold: Double = 0.8
     ) {
         self.query = query
+
+        func rank(_ candidate: BrandIconCandidate) -> Int {
+            guard candidate.confidence >= preferenceThreshold,
+                  let index = preferredSources.firstIndex(of: candidate.source)
+            else { return preferredSources.count }
+            return index
+        }
+
         self.candidates = candidates.sorted { lhs, rhs in
-            let left = preferredSources.firstIndex(of: lhs.source) ?? preferredSources.count
-            let right = preferredSources.firstIndex(of: rhs.source) ?? preferredSources.count
+            let left = rank(lhs)
+            let right = rank(rhs)
             if left != right { return left < right }
             return lhs.confidence > rhs.confidence
         }

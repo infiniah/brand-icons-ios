@@ -263,17 +263,25 @@ var configuration = ResolverConfiguration.default
 configuration.allowsAppStore = true
 ```
 
-Turning on the App Store provider is already a statement that you want real app artwork, so it also
-becomes the preferred source: when the store knows the app, its icon outranks a flattened mark even
-when the flattened mark scores higher. Set `preferredSources` yourself to change that, including to
-`[]` to keep pure confidence ranking:
-
 ```swift
 configuration.preferredSources = []                          // rank on confidence alone
 ```
 
-A preferred candidate still has to clear `minimumConfidence`, so preferring a source never means
-accepting a bad match from it, and a source that finds nothing falls through to the next one.
+Preference is gated on `preferenceThreshold`, which defaults to `0.8`. Without a bar it would be
+actively harmful: the favicon tier answers for a domain guessed from the name, so `Acme Corp`
+cheerfully returns whatever `acmecorp.com` happens to serve, and letting that outrank a certain
+catalogue match trades a dull icon for a wrong one.
+
+So at the default, App Store artwork for a name it matched exactly wins, and a favicon scraped off a
+guessed domain does not. A favicon *does* win once you pass a real `domain`, because then it is the
+brand's own declared icon and nothing beats that.
+
+### What this does not fix
+
+With the App Store tier off, which is the default, `Figma` still draws as the outline. No ranking
+change can fix that, because the only mark available offline is the flattened one. If brand fidelity
+matters more to you than staying offline, turn a network tier on. If it does not, the bundled mark is
+still the right brand, and `BrandIconResult.isAmbiguous` will tell you when even that is a guess.
 
 Read the App Store terms note under [Provider tiers](#provider-tiers) before enabling it.
 

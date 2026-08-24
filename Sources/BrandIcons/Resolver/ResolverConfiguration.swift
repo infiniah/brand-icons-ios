@@ -41,15 +41,33 @@ public struct ResolverConfiguration: Sendable {
     /// ``minimumConfidence`` to be picked, so preferring a source never means accepting a bad
     /// match from it.
     ///
-    /// Leaving this `nil` derives it: turning ``allowsAppStore`` on is already a statement that
-    /// you want real app artwork, so it would be perverse to fetch it and then rank it below a
-    /// flattened silhouette. Set it explicitly, including to `[]`, to override that.
+    /// Leaving this `nil` derives it from what is enabled: every tier that returns real artwork,
+    /// best first. Set it explicitly, including to `[]`, to rank purely on confidence.
     public var preferredSources: [BrandIconSource]?
 
-    /// The ordering actually applied, after deriving it from ``allowsAppStore``.
+    /// How sure a preferred source must be before it may jump the queue.
+    ///
+    /// Without a bar, preference would be actively harmful. The favicon tier answers for a domain
+    /// guessed from the name, so `Acme Corp` cheerfully returns whatever `acmecorp.com` happens to
+    /// serve, and letting that outrank a certain catalogue match would trade a dull icon for a
+    /// wrong one.
+    ///
+    /// At the default, App Store artwork for a name it matched exactly wins, and a favicon scraped
+    /// off a guessed domain does not. A favicon *does* win once you pass a real ``BrandQuery/domain``,
+    /// because then it is the brand's own declared icon and nothing beats that.
+    public var preferenceThreshold: Double
+
+    /// The ordering actually applied, after deriving it from what is enabled.
+    ///
+    /// Ordered by how good the artwork tends to be rather than by how fast the tier is: App Store
+    /// icons are designed at 512 points, and a favicon is whatever the site had lying around.
     public var effectivePreferredSources: [BrandIconSource] {
         if let preferredSources { return preferredSources }
-        return allowsAppStore ? [.appStore] : []
+        guard allowsNetwork else { return [] }
+        var derived: [BrandIconSource] = []
+        if allowsAppStore { derived.append(.appStore) }
+        derived.append(.favicon)
+        return derived
     }
 
     /// Leaves out marks whose recorded terms forbid commercial use or derivative works.
@@ -73,7 +91,8 @@ public struct ResolverConfiguration: Sendable {
         allowsNetwork: Bool = true,
         requestsPerMinute: Int = 15,
         excludesRestrictiveLicenses: Bool = false,
-        preferredSources: [BrandIconSource]? = nil
+        preferredSources: [BrandIconSource]? = nil,
+        preferenceThreshold: Double = 0.8
     ) {
         self.shortCircuitConfidence = shortCircuitConfidence
         self.minimumConfidence = minimumConfidence
@@ -83,6 +102,7 @@ public struct ResolverConfiguration: Sendable {
         self.requestsPerMinute = requestsPerMinute
         self.excludesRestrictiveLicenses = excludesRestrictiveLicenses
         self.preferredSources = preferredSources
+        self.preferenceThreshold = preferenceThreshold
     }
 
     /// Bundled marks only. No network, no third party, works on a plane.
