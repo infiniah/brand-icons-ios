@@ -1,0 +1,496 @@
+[
+  {
+    "brandTokens" : [
+      "netflix"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "netflix"
+      }
+    ],
+    "normalizedKey" : "netflix",
+    "query" : "Netflix"
+  },
+  {
+    "brandTokens" : [
+      "netflix"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "netflix"
+      }
+    ],
+    "normalizedKey" : "netflix",
+    "query" : "NETFLIX.COM"
+  },
+  {
+    "brandTokens" : [
+      "netflix"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "netflix"
+      }
+    ],
+    "normalizedKey" : "netflix",
+    "query" : "netflix"
+  },
+  {
+    "brandTokens" : [
+      "spotify"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "spotify"
+      }
+    ],
+    "normalizedKey" : "spotify",
+    "query" : "Spotify"
+  },
+  {
+    "brandTokens" : [
+      "spotify",
+      "usa"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 0.81,
+        "slug" : "spotify"
+      }
+    ],
+    "normalizedKey" : "spotifyusa",
+    "query" : "SPOTIFY USA"
+  },
+  {
+    "brandTokens" : [
+      "spotify"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "spotify"
+      }
+    ],
+    "normalizedKey" : "spotify",
+    "query" : "APPLE.COM\/BILL SPOTIFY"
+  },
+  {
+    "brandTokens" : [
+      "apple"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "apple"
+      }
+    ],
+    "normalizedKey" : "apple",
+    "query" : "Apple"
+  },
+  {
+    "brandTokens" : [
+      "apple",
+      "tv"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "appletv"
+      }
+    ],
+    "normalizedKey" : "appletv",
+    "query" : "Apple TV"
+  },
+  {
+    "brandTokens" : [
+      "apple",
+      "music"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "applemusic"
+      }
+    ],
+    "normalizedKey" : "applemusic",
+    "query" : "Apple Music"
+  },
+  {
+    "brandTokens" : [
+      "notion"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "notion"
+      }
+    ],
+    "normalizedKey" : "notion",
+    "query" : "Notion"
+  },
+  {
+    "brandTokens" : [
+      "notion",
+      "labs"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 0.81,
+        "slug" : "notion"
+      },
+      {
+        "confidence" : 0.48,
+        "slug" : "cockroachlabs"
+      },
+      {
+        "confidence" : 0.48,
+        "slug" : "saucelabs"
+      }
+    ],
+    "normalizedKey" : "notionlabs",
+    "query" : "NOTION LABS INC"
+  },
+  {
+    "brandTokens" : [
+      "figma"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "figma"
+      }
+    ],
+    "normalizedKey" : "figma",
+    "query" : "Figma"
+  },
+  {
+    "brandTokens" : [
+      "adobe",
+      "creative",
+      "cloud"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 0.455,
+        "slug" : "creativecommons"
+      },
+      {
+        "confidence" : 0.455,
+        "slug" : "creativetechnology"
+      },
+      {
+        "confidence" : 0.455,
+        "slug" : "alibabacloud"
+      },
+      {
+        "confidence" : 0.455,
+        "slug" : "clevercloud"
+      },
+      {
+        "confidence" : 0.455,
+        "slug" : "cloud66"
+      }
+    ],
+    "normalizedKey" : "adobecreativecloud",
+    "query" : "Adobe Creative Cloud"
+  },
+  {
+    "brandTokens" : [
+      "1password"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "1password"
+      }
+    ],
+    "normalizedKey" : "1password",
+    "query" : "1Password"
+  },
+  {
+    "brandTokens" : [
+      "duolingo"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "duolingo"
+      }
+    ],
+    "normalizedKey" : "duolingo",
+    "query" : "Duolingo"
+  },
+  {
+    "brandTokens" : [
+      "github"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "github"
+      }
+    ],
+    "normalizedKey" : "github",
+    "query" : "GitHub"
+  },
+  {
+    "brandTokens" : [
+      "slack"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 0.4133,
+        "slug" : "slackware"
+      }
+    ],
+    "normalizedKey" : "slack",
+    "query" : "Slack"
+  },
+  {
+    "brandTokens" : [
+      "dropbox"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "dropbox"
+      }
+    ],
+    "normalizedKey" : "dropbox",
+    "query" : "Dropbox"
+  },
+  {
+    "brandTokens" : [
+      "vue",
+      "js"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "vuedotjs"
+      }
+    ],
+    "normalizedKey" : "vuejs",
+    "query" : "Vue.js"
+  },
+  {
+    "brandTokens" : [
+      "zxqvwmkjhgfd"
+    ],
+    "candidates" : [
+
+    ],
+    "normalizedKey" : "zxqvwmkjhgfd",
+    "query" : "Zxqvwmkjhgfd"
+  },
+  {
+    "brandTokens" : [
+
+    ],
+    "candidates" : [
+
+    ],
+    "normalizedKey" : "",
+    "query" : ""
+  },
+  {
+    "brandTokens" : [
+      "a"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 0.51,
+        "slug" : "aframe"
+      },
+      {
+        "confidence" : 0.48,
+        "slug" : "keepachangelog"
+      },
+      {
+        "confidence" : 0.465,
+        "slug" : "buymeacoffee"
+      }
+    ],
+    "normalizedKey" : "a",
+    "query" : "a"
+  },
+  {
+    "brandTokens" : [
+
+    ],
+    "candidates" : [
+
+    ],
+    "normalizedKey" : "",
+    "query" : "  "
+  },
+  {
+    "brandTokens" : [
+      "amazon"
+    ],
+    "candidates" : [
+
+    ],
+    "normalizedKey" : "amazon",
+    "query" : "Amazon"
+  },
+  {
+    "brandTokens" : [
+      "google"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "google"
+      }
+    ],
+    "normalizedKey" : "google",
+    "query" : "Google"
+  },
+  {
+    "brandTokens" : [
+      "microsoft"
+    ],
+    "candidates" : [
+
+    ],
+    "normalizedKey" : "microsoft",
+    "query" : "Microsoft"
+  },
+  {
+    "brandTokens" : [
+      "x"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "x"
+      }
+    ],
+    "normalizedKey" : "x",
+    "query" : "X"
+  },
+  {
+    "brandTokens" : [
+      "meta"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "meta"
+      }
+    ],
+    "normalizedKey" : "meta",
+    "query" : "Meta"
+  },
+  {
+    "brandTokens" : [
+      "discord"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "discord"
+      }
+    ],
+    "normalizedKey" : "discord",
+    "query" : "Discord"
+  },
+  {
+    "brandTokens" : [
+      "twitch"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "twitch"
+      }
+    ],
+    "normalizedKey" : "twitch",
+    "query" : "Twitch"
+  },
+  {
+    "brandTokens" : [
+      "steam"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "steam"
+      }
+    ],
+    "normalizedKey" : "steam",
+    "query" : "Steam"
+  },
+  {
+    "brandTokens" : [
+      "playstation"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "playstation"
+      }
+    ],
+    "normalizedKey" : "playstation",
+    "query" : "PlayStation"
+  },
+  {
+    "brandTokens" : [
+      "sq",
+      "blue",
+      "bottle"
+    ],
+    "candidates" : [
+
+    ],
+    "normalizedKey" : "sqbluebottle",
+    "query" : "SQ *BLUE BOTTLE"
+  },
+  {
+    "brandTokens" : [
+      "paypal",
+      "spotify"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 0.81,
+        "slug" : "paypal"
+      },
+      {
+        "confidence" : 0.81,
+        "slug" : "spotify"
+      }
+    ],
+    "normalizedKey" : "paypalspotify",
+    "query" : "PAYPAL *SPOTIFY"
+  },
+  {
+    "brandTokens" : [
+      "disney"
+    ],
+    "candidates" : [
+
+    ],
+    "normalizedKey" : "disney",
+    "query" : "Disney+"
+  },
+  {
+    "brandTokens" : [
+      "hbo",
+      "max"
+    ],
+    "candidates" : [
+      {
+        "confidence" : 1,
+        "slug" : "hbomax"
+      }
+    ],
+    "normalizedKey" : "hbomax",
+    "query" : "HBO Max"
+  }
+]

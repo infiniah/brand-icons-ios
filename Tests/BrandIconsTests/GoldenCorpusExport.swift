@@ -52,10 +52,14 @@ struct GoldenCorpusExport {
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        // Inside the repository, because every port is checked against this file and a
+        // contract that lives outside version control is not a contract.
         let url = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent()
-            .appendingPathComponent("golden-corpus.json")
+            .appendingPathComponent("Fixtures/golden-corpus.json")
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(), withIntermediateDirectories: true
+        )
         try encoder.encode(rows).write(to: url)
         print("GOLDEN WRITTEN: \(url.path)")
     }
