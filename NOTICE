@@ -1,0 +1,131 @@
+NOTICE
+======
+
+This package bundles brand marks generated from Simple Icons.
+
+    Simple Icons
+    https://github.com/simple-icons/simple-icons
+
+The Simple Icons project is released under CC0 1.0 Universal. The file
+`Sources/BrandIcons/Resources/BrandMarks.json` records which release the bundled marks were
+generated from, and `Scripts/generate_marks.py` regenerates it.
+
+This notice is a description of what we know about the material we redistribute. It is not
+legal advice, and it is not a statement that any particular use of these marks is permitted.
+
+
+What CC0 covers, and what it does not
+-------------------------------------
+
+CC0 is a waiver of copyright and related rights in a work. Here the work is the drawing:
+the SVG path a contributor produced. CC0 section 4(a) is explicit that it does not reach
+trademark:
+
+    No trademark or patent rights held by Affirmer are waived, abandoned, surrendered,
+    licensed or otherwise affected by this document.
+
+That limit is not a technicality. The person who drew a brand's logo as an SVG is not the
+person who owns the brand, so they were never in a position to waive anything on the brand
+owner's behalf. Every mark here depicts a trademark that belongs to someone else. Copyright
+in the drawing and trademark in the thing drawn are separate, and CC0 only speaks to the
+first.
+
+Trademark law generally turns on how a mark is used rather than on how a file was licensed:
+who is displaying it, next to what, and whether an audience could read it as affiliation,
+sponsorship, or endorsement. Displaying a logo to label a service a person already
+subscribes to is a different use from putting the same logo on a marketing page. Working out
+which uses are open to you is your job, and for anything commercial it is a question for a
+lawyer rather than for a README.
+
+
+What Simple Icons itself says
+-----------------------------
+
+The project publishes a disclaimer at DISCLAIMER.md in its repository. Its substance, in our
+words:
+
+  * Simple Icons being CC0 does not imply that every icon within the project is CC0.
+    Individual icons may be offered under other licences.
+
+  * The project records licence data per icon where it has it. That data is contributed and
+    maintained by a community, so it can be incomplete or out of date. The absence of a
+    licence for an icon does not mean the icon has no licence.
+
+  * Licences change. Simple Icons asks users to check regularly whether the licence of an
+    icon they use has changed.
+
+  * Where a brand publishes branding guidelines, Simple Icons links to them and asks users
+    to read them and keep their usage in line with them.
+
+  * Simple Icons states that it cannot be held responsible for any legal activity raised by
+    a brand or by users of the package, and asks that users seek the correct permissions for
+    the icons relevant to their project.
+
+  * Brands can ask for their icon to be removed, and icons are removed between releases.
+    A slug that resolves today may be gone from the next release. Regenerating the catalogue
+    can therefore drop marks, and `Scripts/generate_marks.py` reports every slug it could
+    not find.
+
+Read the disclaimer yourself rather than relying on this summary:
+
+    https://github.com/simple-icons/simple-icons/blob/develop/DISCLAIMER.md
+
+
+Per icon licences in this catalogue
+-----------------------------------
+
+This package bundles every icon Simple Icons ships. Where Simple Icons records a licence for
+one, the generator carries it into `BrandMarks.json` under a `license` key rather than
+discarding it, and it is readable on the mark:
+
+```swift
+BundledCatalog.mark(slug: "anki")?.license   // BundledMarkLicense(type: "AGPL-3.0-only")
+```
+
+To see every mark that carries recorded terms, and what those terms are:
+
+```swift
+let licensed = BundledCatalog.all.compactMap { mark in
+    mark.license.map { (mark.slug, $0.type, $0.url) }
+}
+```
+
+In the generation currently checked in, 3453 marks are bundled. 223 of them carry recorded
+licence data, and 212 of those are something other than CC0. The families present are
+attribution (CC-BY), share alike (CC-BY-SA), permissive software licences (MIT, Apache-2.0,
+BSD-3-Clause, MPL-2.0), copyleft (GPL, AGPL), and 23 marks under terms the brand sets
+itself, each with a URL in the data. 72 marks carry copyleft or share alike terms.
+
+Two groups deserve naming, because their terms conflict with uses people commonly assume are
+open. 13 marks are under NonCommercial or NoDerivatives terms:
+
+    cocoapods        CC-BY-NC-4.0
+    letsencrypt      CC-BY-NC-4.0
+    nodebb           CC-BY-NC-4.0
+    rubocop          CC-BY-NC-4.0
+    gamebanana       CC-BY-NC-ND-4.0
+    pycqa            CC-BY-NC-ND-4.0
+    tauri            CC-BY-NC-ND-4.0
+    sass             CC-BY-NC-SA-3.0
+    misskey          CC-BY-NC-SA-4.0
+    robotframework   CC-BY-NC-SA-4.0
+    vuedotjs         CC-BY-NC-SA-4.0
+    jpeg             CC-BY-ND-4.0
+    slint            CC-BY-ND-4.0
+
+NonCommercial terms speak to whether the work may be used commercially. NoDerivatives terms
+speak to whether it may be modified, and this package does modify: it parses the path and
+rescales it into whatever rectangle the caller asks for. If you are shipping a commercial
+product, or if either of those matters to you, these are the entries to look at first.
+
+The counts and lists above describe one generation of the file at one point in time. They are
+not a complete account of the terms attached to every mark, because Simple Icons has licence
+data for only a fraction of its icons and because that data changes between releases. An
+entry with no licence is not thereby CC0; it means nothing is on file. Check the JSON you
+actually ship.
+
+
+CC0 1.0 Universal
+-----------------
+
+    https://creativecommons.org/publicdomain/zero/1.0/legalcode
