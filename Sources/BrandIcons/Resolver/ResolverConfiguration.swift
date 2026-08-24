@@ -25,6 +25,33 @@ public struct ResolverConfiguration: Sendable {
     /// Requests per minute allowed per provider.
     public var requestsPerMinute: Int
 
+    /// Sources that win over a higher scoring candidate from somewhere else.
+    ///
+    /// Confidence answers "is this the right brand". It says nothing about whether the artwork
+    /// is any good, and those come apart badly. The bundled catalogue is Simple Icons, which is
+    /// a monochrome single path set by design, so Figma's five coloured shapes and Duolingo's
+    /// owl both flatten to white outlines. Both score 1.00, because they are unambiguously the
+    /// right brand, and both look nothing like the logo people recognise.
+    ///
+    /// The App Store returns the real thing in colour. Listing it here lets a caller say "if the
+    /// store knows this app, draw the store's icon", while still falling back to a flattened mark
+    /// rather than to nothing.
+    ///
+    /// Order matters: earlier wins. A preferred candidate must still clear
+    /// ``minimumConfidence`` to be picked, so preferring a source never means accepting a bad
+    /// match from it.
+    ///
+    /// Leaving this `nil` derives it: turning ``allowsAppStore`` on is already a statement that
+    /// you want real app artwork, so it would be perverse to fetch it and then rank it below a
+    /// flattened silhouette. Set it explicitly, including to `[]`, to override that.
+    public var preferredSources: [BrandIconSource]?
+
+    /// The ordering actually applied, after deriving it from ``allowsAppStore``.
+    public var effectivePreferredSources: [BrandIconSource] {
+        if let preferredSources { return preferredSources }
+        return allowsAppStore ? [.appStore] : []
+    }
+
     /// Leaves out marks whose recorded terms forbid commercial use or derivative works.
     ///
     /// Thirteen marks in the generated catalogue carry NonCommercial or NoDerivatives terms,
@@ -45,7 +72,8 @@ public struct ResolverConfiguration: Sendable {
         allowsAppStore: Bool = false,
         allowsNetwork: Bool = true,
         requestsPerMinute: Int = 15,
-        excludesRestrictiveLicenses: Bool = false
+        excludesRestrictiveLicenses: Bool = false,
+        preferredSources: [BrandIconSource]? = nil
     ) {
         self.shortCircuitConfidence = shortCircuitConfidence
         self.minimumConfidence = minimumConfidence
@@ -54,6 +82,7 @@ public struct ResolverConfiguration: Sendable {
         self.allowsNetwork = allowsNetwork
         self.requestsPerMinute = requestsPerMinute
         self.excludesRestrictiveLicenses = excludesRestrictiveLicenses
+        self.preferredSources = preferredSources
     }
 
     /// Bundled marks only. No network, no third party, works on a plane.

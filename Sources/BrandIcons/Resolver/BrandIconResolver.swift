@@ -17,7 +17,11 @@ import Foundation
 /// good enough, so the common case never touches the network.
 public actor BrandIconResolver {
     private let providers: [any BrandIconProvider]
-    private let configuration: ResolverConfiguration
+    /// How this resolver was configured.
+    ///
+    /// Readable without awaiting the actor, so a caller can rank a list it assembled itself the
+    /// same way ``resolve(_:)`` would have.
+    public nonisolated let configuration: ResolverConfiguration
     private var cache: [String: BrandIconResult] = [:]
 
     /// The default stack: bundled marks, then the service's own favicon. The App Store provider
@@ -70,7 +74,8 @@ public actor BrandIconResolver {
             candidates: deduplicated(collected)
                 .filter { $0.confidence >= configuration.minimumConfidence }
                 .prefix(configuration.maximumCandidates)
-                .map { $0 }
+                .map { $0 },
+            preferring: configuration.effectivePreferredSources
         )
         cache[key] = result
         return result

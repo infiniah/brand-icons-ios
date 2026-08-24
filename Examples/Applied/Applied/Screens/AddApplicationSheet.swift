@@ -20,6 +20,9 @@ struct AddApplicationSheet: View {
     @State private var status = ApplicationStatus.applied
     @State private var candidates: [BrandIconCandidate] = []
     @State private var chosen: BrandIconCandidate?
+
+    /// Stops the exhaustive pass from overriding a candidate the user tapped.
+    @State private var pickedManually = false
     @State private var isResolving = false
     @State private var searchTask: Task<Void, Never>?
     @State private var includesAppStore = false
@@ -133,7 +136,10 @@ struct AddApplicationSheet: View {
         if !candidates.isEmpty {
             VStack(spacing: 0) {
                 ForEach(candidates) { candidate in
-                    Button { chosen = candidate } label: {
+                    Button {
+                        chosen = candidate
+                        pickedManually = true
+                    } label: {
                         candidateRow(candidate)
                     }
                     .buttonStyle(.plain)
@@ -227,6 +233,7 @@ struct AddApplicationSheet: View {
             candidates = []
             probes = []
             chosen = nil
+            pickedManually = false
             isResolving = false
             return
         }
@@ -241,7 +248,7 @@ struct AddApplicationSheet: View {
             let bundled = await withShapes(offlineResult.candidates, using: offlineResolver)
             guard !Task.isCancelled else { return }
             candidates = bundled
-            chosen = bundled.first
+            if !pickedManually { chosen = bundled.first }
 
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled else { return }
@@ -265,9 +272,17 @@ struct AddApplicationSheet: View {
             guard !Task.isCancelled else { return }
 
             probes = withArt
-            let everything = withArt.flatMap(\.candidates).sorted { $0.confidence > $1.confidence }
-            candidates = Array(everything.prefix(8))
-            if chosen == nil { chosen = candidates.first }
+
+            // Ranked through `BrandIconResult` rather than by confidence alone, so the App Store
+            // preference applies here too. Sorting on confidence would put Simple Icons' white
+            // outline of Figma above the real coloured app icon, since both are certainly Figma.
+            let ranked = BrandIconResult(
+                query: trimmed,
+                candidates: withArt.flatMap(\.candidates),
+                preferring: resolver.configuration.effectivePreferredSources
+            )
+            candidates = Array(ranked.candidates.prefix(8))
+            if !pickedManually { chosen = candidates.first }
         }
     }
 

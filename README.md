@@ -242,6 +242,41 @@ await limiter.acquire()
 let candidates = try await provider.candidates(for: query)
 ```
 
+## When the bundled mark is the wrong picture
+
+The bundled catalogue is [Simple Icons](https://simpleicons.org), which is a **monochrome, single
+path** set by design. Every mark is one shape and one tint.
+
+For most brands that is the logo. Spotify, Netflix, Dropbox and Notion really are silhouettes, so
+the bundled mark is indistinguishable from the real thing.
+
+For a brand whose identity *is* colour, it is not. Figma is five coloured shapes and Duolingo is a
+full colour owl; flattened to one path they become white outlines. Both still score `1.00`, because
+confidence answers "is this the right brand" and says nothing about whether the artwork looks like
+what people recognise. Those two questions come apart, and no scoring change will fix it, because
+the information was never in the file.
+
+If that matters for your app, prefer a source that returns real artwork:
+
+```swift
+var configuration = ResolverConfiguration.default
+configuration.allowsAppStore = true
+```
+
+Turning on the App Store provider is already a statement that you want real app artwork, so it also
+becomes the preferred source: when the store knows the app, its icon outranks a flattened mark even
+when the flattened mark scores higher. Set `preferredSources` yourself to change that, including to
+`[]` to keep pure confidence ranking:
+
+```swift
+configuration.preferredSources = []                          // rank on confidence alone
+```
+
+A preferred candidate still has to clear `minimumConfidence`, so preferring a source never means
+accepting a bad match from it, and a source that finds nothing falls through to the next one.
+
+Read the App Store terms note under [Provider tiers](#provider-tiers) before enabling it.
+
 ## Restrictively licensed marks
 
 Thirteen of the 3,453 marks carry recorded terms that forbid commercial use or derivative works,

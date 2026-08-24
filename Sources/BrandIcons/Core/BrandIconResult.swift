@@ -8,9 +8,18 @@ public struct BrandIconResult: Hashable, Sendable {
     /// Candidates sorted by descending confidence. May be empty.
     public let candidates: [BrandIconCandidate]
 
-    public init(query: String, candidates: [BrandIconCandidate]) {
+    public init(
+        query: String,
+        candidates: [BrandIconCandidate],
+        preferring preferredSources: [BrandIconSource] = []
+    ) {
         self.query = query
-        self.candidates = candidates.sorted { $0.confidence > $1.confidence }
+        self.candidates = candidates.sorted { lhs, rhs in
+            let left = preferredSources.firstIndex(of: lhs.source) ?? preferredSources.count
+            let right = preferredSources.firstIndex(of: rhs.source) ?? preferredSources.count
+            if left != right { return left < right }
+            return lhs.confidence > rhs.confidence
+        }
     }
 
     /// The single best candidate, if one clears `minimum`.

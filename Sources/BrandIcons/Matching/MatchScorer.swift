@@ -65,10 +65,14 @@ public enum MatchScorer {
         // It is deliberately weak. A query that is merely a prefix of a longer brand is
         // usually a different brand: "Apple" is not "Apple TV", and scoring it confidently
         // makes the resolver pick whichever sibling slug happens to be shortest.
+        // The floor and the ratio gate are both load bearing. Without them a brand literally
+        // named "E" is contained in "sqbluebottle" and scores 0.30, which is above the default
+        // minimum, so every unmatched descriptor picks up a junk single letter candidate.
         if structural == 0 {
-            if queryKey.contains(targetKey) || targetKey.contains(queryKey) {
-                let ratio = Double(min(queryKey.count, targetKey.count))
-                    / Double(max(queryKey.count, targetKey.count))
+            let shorter = min(queryKey.count, targetKey.count)
+            let ratio = Double(shorter) / Double(max(queryKey.count, targetKey.count))
+            if shorter >= 3, ratio >= 0.5,
+               queryKey.contains(targetKey) || targetKey.contains(queryKey) {
                 structural = 0.28 + 0.24 * ratio
             }
         }

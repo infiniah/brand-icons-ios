@@ -31,9 +31,9 @@ struct MarkIndex: Sendable {
         tokens.reserveCapacity(marks.count * 2)
 
         for mark in marks {
-            for source in [mark.title, mark.slug] {
-                let key = NameNormalizer.key(source)
-                guard !key.isEmpty else { continue }
+            // `Set` because a mark whose title normalises to its slug, which is most of them,
+            // would otherwise be indexed under that one key twice and returned twice.
+            for key in Set([mark.title, mark.slug].map(NameNormalizer.key)) where !key.isEmpty {
                 keys[key, default: []].append(mark)
             }
             for token in Set(NameNormalizer.brandTokens(mark.title) + [mark.slug]) {
