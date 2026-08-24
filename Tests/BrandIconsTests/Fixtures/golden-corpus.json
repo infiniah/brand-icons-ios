@@ -148,6 +148,10 @@
       },
       {
         "confidence" : 0.48,
+        "slug" : "database-labs"
+      },
+      {
+        "confidence" : 0.48,
         "slug" : "saucelabs"
       }
     ],
@@ -175,6 +179,14 @@
     ],
     "candidates" : [
       {
+        "confidence" : 0.78,
+        "slug" : "adobe"
+      },
+      {
+        "confidence" : 0.455,
+        "slug" : "adobe-premiere"
+      },
+      {
         "confidence" : 0.455,
         "slug" : "creativecommons"
       },
@@ -185,14 +197,6 @@
       {
         "confidence" : 0.455,
         "slug" : "alibabacloud"
-      },
-      {
-        "confidence" : 0.455,
-        "slug" : "clevercloud"
-      },
-      {
-        "confidence" : 0.455,
-        "slug" : "cloud66"
       }
     ],
     "normalizedKey" : "adobecreativecloud",
@@ -243,8 +247,8 @@
     ],
     "candidates" : [
       {
-        "confidence" : 0.4133,
-        "slug" : "slackware"
+        "confidence" : 1,
+        "slug" : "slack"
       }
     ],
     "normalizedKey" : "slack",
@@ -333,7 +337,14 @@
       "amazon"
     ],
     "candidates" : [
-
+      {
+        "confidence" : 0.51,
+        "slug" : "amazon-chime"
+      },
+      {
+        "confidence" : 0.51,
+        "slug" : "amazon-connect"
+      }
     ],
     "normalizedKey" : "amazon",
     "query" : "Amazon"
@@ -356,7 +367,10 @@
       "microsoft"
     ],
     "candidates" : [
-
+      {
+        "confidence" : 1,
+        "slug" : "microsoft"
+      }
     ],
     "normalizedKey" : "microsoft",
     "query" : "Microsoft"

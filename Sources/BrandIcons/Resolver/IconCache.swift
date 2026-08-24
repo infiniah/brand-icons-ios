@@ -84,6 +84,8 @@ public actor IconCache {
             return data.count
         case let .vector(path, _, _):
             return path.utf8.count + 64
+        case let .layeredVector(layers, _):
+            return layers.reduce(64) { $0 + $1.path.utf8.count + 16 }
         }
     }
 }

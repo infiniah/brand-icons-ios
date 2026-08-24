@@ -38,7 +38,7 @@ public struct BundledIconProvider: BrandIconProvider {
                     title: mark.title,
                     confidence: MatchScorer.score(query: query.name, name: mark.title, slug: mark.slug),
                     source: source,
-                    shape: .vector(path: mark.pathData, viewBox: mark.viewBox, tint: mark.tint)
+                    shape: Self.shape(for: mark)
                 )
             }
             .filter { $0.confidence > Self.floor }
@@ -51,8 +51,19 @@ public struct BundledIconProvider: BrandIconProvider {
             title: mark.title,
             confidence: confidence,
             source: source,
-            shape: .vector(path: mark.pathData, viewBox: mark.viewBox, tint: mark.tint)
+            shape: Self.shape(for: mark)
         )
+    }
+
+    /// The colour artwork when the brand has it, and the flattened mark otherwise.
+    ///
+    /// `pathData` on a mark that also has layers is the silhouette of the same brand, kept as a
+    /// fallback for a caller that wants one tint it can recolour.
+    static func shape(for mark: BundledMark) -> BrandIconShape {
+        if let colorViewBox = mark.colorViewBox, !mark.layers.isEmpty {
+            return .layeredVector(layers: mark.layers, viewBox: colorViewBox)
+        }
+        return .vector(path: mark.pathData, viewBox: mark.viewBox, tint: mark.tint)
     }
 
     public func shape(for candidate: BrandIconCandidate) async throws -> BrandIconShape {
@@ -60,6 +71,6 @@ public struct BundledIconProvider: BrandIconProvider {
         guard let mark = marks.first(where: { $0.slug == candidate.slug }) else {
             throw BrandIconError.notFound
         }
-        return .vector(path: mark.pathData, viewBox: mark.viewBox, tint: mark.tint)
+        return Self.shape(for: mark)
     }
 }

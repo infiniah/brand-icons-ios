@@ -45,6 +45,17 @@ public struct BrandIconView: View {
             BrandVectorShape(pathData: path, viewBox: viewBox)
                 .fill(foreground)
                 .padding(size * 0.22)
+        case let .layeredVector(layers, viewBox):
+            // Painted back to front in the order the artwork lists them, each in its own fill.
+            // A layer without one takes the foreground, which is what a single colour mark that
+            // happens to arrive as layers should look like.
+            ZStack {
+                ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
+                    BrandVectorShape(pathData: layer.path, viewBox: viewBox)
+                        .fill(layer.fill?.swiftUIColor ?? foreground)
+                }
+            }
+            .padding(size * 0.14)
         case let .raster(data):
             rasterImage(data)
         case .none:
@@ -74,11 +85,10 @@ public struct BrandIconView: View {
 
     private var background: Color {
         if case .raster = candidate?.shape { return .clear }
-        return Color(
-            red: Double(brandColor.red) / 255,
-            green: Double(brandColor.green) / 255,
-            blue: Double(brandColor.blue) / 255
-        )
+        // Multi colour artwork already carries its own palette, so painting it onto a brand
+        // tinted tile would fight it. It sits on nothing, the way a real app icon does.
+        if candidate?.shape?.isMultiColor == true { return .clear }
+        return brandColor.swiftUIColor
     }
 
     /// White unless the tile is genuinely light.

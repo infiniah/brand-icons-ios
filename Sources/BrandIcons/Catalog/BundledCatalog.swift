@@ -83,6 +83,8 @@ public enum BundledCatalog {
         let path: String
         let viewBox: [Double]
         let tint: String
+        let layers: [Layer]?
+        let colorViewBox: [Double]?
         let license: License?
 
         var mark: BundledMark? {
@@ -91,14 +93,38 @@ public enum BundledCatalog {
                   let tint = BrandColor(hex: tint)
             else { return nil }
 
+            // Colour artwork is only usable with the canvas it was drawn on, so a mark that
+            // has one without the other falls back to the monochrome path rather than being
+            // scaled against the wrong box.
+            let resolvedLayers = layers?.compactMap(\.value) ?? []
+            let resolvedBox = Self.rect(colorViewBox)
+            let usableColor = !resolvedLayers.isEmpty && resolvedBox != nil
+
             return BundledMark(
                 slug: slug,
                 title: title,
                 pathData: path,
                 viewBox: CGRect(x: viewBox[0], y: viewBox[1], width: viewBox[2], height: viewBox[3]),
                 tint: tint,
+                layers: usableColor ? resolvedLayers : [],
+                colorViewBox: usableColor ? resolvedBox : nil,
                 license: license.map { $0.value }
             )
+        }
+
+        private static func rect(_ numbers: [Double]?) -> CGRect? {
+            guard let numbers, numbers.count == 4, numbers[2] > 0, numbers[3] > 0 else { return nil }
+            return CGRect(x: numbers[0], y: numbers[1], width: numbers[2], height: numbers[3])
+        }
+    }
+
+    private struct Layer: Decodable {
+        let path: String
+        let fill: String?
+
+        var value: VectorLayer? {
+            guard !path.isEmpty else { return nil }
+            return VectorLayer(path: path, fill: fill.flatMap(BrandColor.init(hex:)))
         }
     }
 
