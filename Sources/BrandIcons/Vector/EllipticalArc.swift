@@ -68,7 +68,11 @@ struct EllipticalArc {
             sweep += 2 * .pi
         }
 
-        let count = max(1, Int(ceil(abs(sweep) / (.pi / 2))))
+        // The epsilon is load bearing. A 90 degree arc divides to 1.0000000000000002 as often
+        // as to 0.999999999999999, and a bare `ceil` turns that last bit into one cubic segment
+        // or two. The shape is the same either way, but the element count is not, so the split
+        // has to be decided by the geometry rather than by the rounding.
+        let count = max(1, Int(ceil(abs(sweep) / (.pi / 2) - 1e-9)))
         let step = sweep / CGFloat(count)
         let controlScale = 4.0 / 3.0 * tan(step / 4)
 
