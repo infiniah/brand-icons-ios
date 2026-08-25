@@ -27,6 +27,7 @@ Needs network access.
 
 import argparse
 import io
+import math
 import json
 import os
 import re
@@ -36,6 +37,7 @@ import urllib.request
 
 REGISTRY = "https://registry.npmjs.org/simple-icons"
 LOGOS_REGISTRY = "https://registry.npmjs.org/@iconify-json/logos"
+THESVG_REGISTRY = "https://registry.npmjs.org/@iconify-json/thesvg-color"
 
 # Simple Icons is monochrome by design: one path, one colour. That is the right call for a
 # uniform set and the wrong picture for a brand whose identity *is* colour, where the mark
@@ -59,7 +61,9 @@ LOGOS_ELEMENT = re.compile(r"<([a-zA-Z]+)")
 LOGOS_PATH = re.compile(r"<path([^>]*?)/?>")
 LOGOS_D = re.compile(r'\sd="([^"]+)"')
 LOGOS_FILL = re.compile(r'fill="(#[0-9A-Fa-f]{3,8})"')
-LOGOS_UNDRAWABLE = ("url(#", "<defs", "clipPath", "mask", "stroke=")
+LOGOS_UNDRAWABLE = (
+    "url(#", "<defs", "clipPath", "<mask", "stroke=", "<image", "<text", "transform=",
+)
 
 
 def request(url):
@@ -104,11 +108,11 @@ def parse_svg(svg):
     return paths[0].strip(), numbers
 
 
-def download_logos():
-    """The SVG Logos set, as Iconify publishes it."""
-    with urllib.request.urlopen(request(f"{LOGOS_REGISTRY}/latest"), timeout=60) as response:
+def download_iconify(registry, name):
+    """One Iconify published icon set."""
+    with urllib.request.urlopen(request(f"{registry}/latest"), timeout=60) as response:
         version = json.load(response)["version"]
-    url = f"{LOGOS_REGISTRY}/-/logos-{version}.tgz"
+    url = f"{registry}/-/{name}-{version}.tgz"
     print(f"fetching {url}", file=sys.stderr)
     with urllib.request.urlopen(request(url), timeout=300) as response:
         payload = response.read()
@@ -118,9 +122,14 @@ def download_logos():
     return version, icons
 
 
-def logos_layers(body):
-    """The fill coloured paths of one icon, or None when it needs a renderer we do not have."""
-    if set(LOGOS_ELEMENT.findall(body)) != {"path"}:
+def color_layers(body):
+    """The fill coloured paths of one icon, or None when it needs a renderer we do not have.
+
+    A bare `<g>` is allowed through because both sets use one purely as a wrapper and every path
+    inside carries its own fill. A `transform` is not: applying an arbitrary matrix is a renderer
+    feature this package does not have, and ignoring one silently misplaces the artwork.
+    """
+    if not set(LOGOS_ELEMENT.findall(body)) <= {"path", "g"}:
         return None
     if any(token in body for token in LOGOS_UNDRAWABLE):
         return None
@@ -132,15 +141,168 @@ def logos_layers(body):
         if not path:
             continue
         fill = LOGOS_FILL.search(attributes)
-        layers.append(
-            {"path": path.group(1).strip(), "fill": fill.group(1).lstrip("#").upper() if fill else None}
-        )
+        layer = {"path": path.group(1).strip(),
+                 "fill": fill.group(1).lstrip("#").upper() if fill else None}
+        # Without this a mark drawn with holes fills them in. Duolingo's eyes vanish.
+        if 'fill-rule="evenodd"' in attributes:
+            layer["evenOdd"] = True
+        layers.append(layer)
     return layers or None
 
 
+NUMBER = re.compile(r"-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
+COMMAND = re.compile(r"[MmZzLlHhVvCcSsQqTtAa]")
+ARITY = {"m": 2, "l": 2, "h": 1, "v": 1, "c": 6, "s": 4, "q": 4, "t": 2, "a": 7, "z": 0}
+
+
+def arc_centre(start_x, start_y, end_x, end_y, rx, ry, degrees, large_arc, sweep):
+    """The centre and corrected radii of an SVG arc, following the SVG 1.1 notes (F.6.5).
+
+    Returns None for a degenerate arc, which the caller treats as a straight line.
+    """
+    rx, ry = abs(rx), abs(ry)
+    if rx == 0 or ry == 0 or (start_x == end_x and start_y == end_y):
+        return None
+
+    phi = math.radians(degrees)
+    cos_phi, sin_phi = math.cos(phi), math.sin(phi)
+    dx, dy = (start_x - end_x) / 2, (start_y - end_y) / 2
+    x1 = cos_phi * dx + sin_phi * dy
+    y1 = -sin_phi * dx + cos_phi * dy
+
+    lam = (x1 * x1) / (rx * rx) + (y1 * y1) / (ry * ry)
+    if lam > 1:
+        correction = math.sqrt(lam)
+        rx *= correction
+        ry *= correction
+
+    denominator = rx * rx * y1 * y1 + ry * ry * x1 * x1
+    if denominator <= 0:
+        return None
+    numerator = max(0.0, rx * rx * ry * ry - denominator)
+    coefficient = (-1 if bool(large_arc) == bool(sweep) else 1) * math.sqrt(numerator / denominator)
+
+    cx1 = coefficient * rx * y1 / ry
+    cy1 = -coefficient * ry * x1 / rx
+    centre_x = cos_phi * cx1 - sin_phi * cy1 + (start_x + end_x) / 2
+    centre_y = sin_phi * cx1 + cos_phi * cy1 + (start_y + end_y) / 2
+
+    # A rotated ellipse needs the larger radius on both axes to stay conservative.
+    reach = max(rx, ry) if degrees else None
+    return centre_x, centre_y, reach or rx, reach or ry
+
+
+def path_extent(data):
+    """A generous bounding box for path data, or None when it cannot be walked.
+
+    Control points are included, so this over-estimates. That is what it is for: the job is to
+    reject artwork whose coordinates plainly do not belong to the viewBox the set declares, not
+    to measure a curve exactly. Iconify carries a handful of marks whose stated width is a
+    quarter of the geometry inside them, and drawn against that box they land off the canvas.
+    """
+    tokens = re.findall(f"{COMMAND.pattern}|{NUMBER.pattern}", data)
+    index = 0
+    current = command = None
+    x = y = start_x = start_y = 0.0
+    lo_x = lo_y = float("inf")
+    hi_x = hi_y = float("-inf")
+
+    def see(px, py):
+        nonlocal lo_x, lo_y, hi_x, hi_y
+        lo_x, lo_y = min(lo_x, px), min(lo_y, py)
+        hi_x, hi_y = max(hi_x, px), max(hi_y, py)
+
+    while index < len(tokens):
+        token = tokens[index]
+        if COMMAND.fullmatch(token):
+            command = token
+            index += 1
+        if command is None:
+            return None
+        kind = command.lower()
+        relative = command.islower()
+        count = ARITY[kind]
+        operands = tokens[index:index + count]
+        if len(operands) < count:
+            return None
+        index += count
+        try:
+            values = [float(value) for value in operands]
+        except ValueError:
+            return None
+
+        if kind == "z":
+            x, y = start_x, start_y
+        elif kind == "h":
+            x = x + values[0] if relative else values[0]
+            see(x, y)
+        elif kind == "v":
+            y = y + values[0] if relative else values[0]
+            see(x, y)
+        elif kind == "a":
+            # An arc bulges away from the straight line between its endpoints, and the endpoint
+            # alone says nothing about how far. The ellipse centre does: the whole arc lies inside
+            # the centre plus or minus the radii. Bounding by the radii around the *endpoints*
+            # instead was tried and threw away half the catalogue, because a circle drawn as two
+            # arcs has endpoints a full diameter apart.
+            end_x = x + values[5] if relative else values[5]
+            end_y = y + values[6] if relative else values[6]
+            centre = arc_centre(x, y, end_x, end_y, values[0], values[1],
+                                values[2], values[3], values[4])
+            if centre is None:
+                see(end_x, end_y)
+            else:
+                centre_x, centre_y, radius_x, radius_y = centre
+                see(centre_x - radius_x, centre_y - radius_y)
+                see(centre_x + radius_x, centre_y + radius_y)
+            x, y = end_x, end_y
+            see(x, y)
+        else:
+            base_x, base_y = (x, y) if relative else (0.0, 0.0)
+            for pair in range(0, count, 2):
+                see(base_x + values[pair], base_y + values[pair + 1])
+            x = base_x + values[count - 2]
+            y = base_y + values[count - 1]
+            if kind == "m":
+                start_x, start_y = x, y
+                command = "l" if relative else "L"
+
+    if lo_x > hi_x:
+        return None
+    return lo_x, lo_y, hi_x, hi_y
+
+
+def fits(layers, width, height):
+    """True when every layer's geometry sits inside the declared canvas, give or take a twentieth.
+
+    Deliberately tighter than the tolerance the test applies. `path_extent` records where an arc
+    *ends*, not how far it bulges on the way, so a mark can pass here and still measure a little
+    outside once the arc is turned into curves. The gap between the two numbers is that headroom.
+    """
+    margin_x = max(1.0, width * 0.05)
+    margin_y = max(1.0, height * 0.05)
+    for layer in layers:
+        extent = path_extent(layer["path"])
+        if extent is None:
+            return False
+        lo_x, lo_y, hi_x, hi_y = extent
+        if lo_x < -margin_x or lo_y < -margin_y:
+            return False
+        if hi_x > width + margin_x or hi_y > height + margin_y:
+            return False
+    return True
+
+
 def logos_key(slug):
-    """`spotify-icon` and `spotify` are the same brand, and match Simple Icons' `spotify`."""
-    return slug.removesuffix("-icon").replace("-", "").replace(".", "").lower()
+    """`spotify-icon`, `duolingo-2024` and `spotify` all reduce to the brand Simple Icons names.
+
+    The year suffix matters: theSVG ships `duolingo` and `duolingo-2024` side by side, the second
+    being the current artwork. Without folding them together they compete as separate brands and
+    a search for Duolingo finds the older drawing.
+    """
+    base = slug.removesuffix("-icon")
+    base = re.sub(r"-(19|20)\d{2}$", "", base)
+    return base.replace("-", "").replace(".", "").lower()
 
 
 def logos_title(slug):
@@ -149,12 +311,12 @@ def logos_title(slug):
     The set ships no titles, so this is a guess. It only has to be good enough to score
     against, since matching normalises both sides anyway.
     """
-    return " ".join(part.capitalize() for part in slug.removesuffix("-icon").split("-"))
+    base = re.sub(r"-(19|20)\d{2}$", "", slug.removesuffix("-icon"))
+    return " ".join(part.capitalize() for part in base.split("-"))
 
 
-def build_color_marks():
-    """Colour marks keyed the way Simple Icons slugs normalise, best variant per brand."""
-    version, icons = download_logos()
+def harvest(icons):
+    """Every drawable, icon shaped mark in one Iconify set, best variant per brand."""
     default_width = icons.get("width", 24)
     default_height = icons.get("height", 24)
 
@@ -174,9 +336,12 @@ def build_color_marks():
             skipped_shape += 1
             continue
 
-        layers = logos_layers(icon["body"])
+        layers = color_layers(icon["body"])
         if layers is None:
             skipped_undrawable += 1
+            continue
+        if not fits(layers, width, height):
+            skipped_shape += 1
             continue
 
         key = logos_key(slug)
@@ -186,19 +351,41 @@ def build_color_marks():
             "viewBox": [0.0, 0.0, float(width), float(height)],
             "layers": layers,
         }
-        # `spotify-icon` is the square mark and `spotify` is the wordmark, so when both survive
-        # the aspect filter the squarer one is the icon.
-        previous = chosen.get(key)
-        if previous is None:
-            chosen[key] = candidate
-        else:
-            def squareness(entry):
-                _, _, w, h = entry["viewBox"]
-                return max(w, h) / min(w, h)
-            if squareness(candidate) < squareness(previous):
-                chosen[key] = candidate
 
-    return version, chosen, skipped_undrawable, skipped_shape
+        def squareness(entry):
+            _, _, w, h = entry["viewBox"]
+            return max(w, h) / min(w, h)
+
+        previous = chosen.get(key)
+        # `spotify-icon` is the square mark and `spotify` is the wordmark, so when both survive
+        # the aspect filter the squarer one is the icon. A dated variant such as `duolingo-2024`
+        # is the newer drawing of the same brand, so it wins ties.
+        if previous is None or squareness(candidate) < squareness(previous) or (
+            squareness(candidate) == squareness(previous) and slug > previous["slug"]
+        ):
+            chosen[key] = candidate
+
+    return chosen, skipped_undrawable, skipped_shape
+
+
+def build_color_marks():
+    """Colour marks from both sets, keyed the way Simple Icons slugs normalise.
+
+    theSVG Color is asked first because it is five times the size and carries current artwork,
+    Duolingo's 2024 owl among it. SVG Logos fills what it misses.
+    """
+    thesvg_version, thesvg_icons = download_iconify(THESVG_REGISTRY, "thesvg-color")
+    logos_version, logos_icons = download_iconify(LOGOS_REGISTRY, "logos")
+
+    primary, primary_undrawable, primary_shape = harvest(thesvg_icons)
+    secondary, secondary_undrawable, secondary_shape = harvest(logos_icons)
+
+    merged = dict(secondary)
+    merged.update(primary)
+
+    versions = {"thesvg-color": thesvg_version, "logos": logos_version}
+    skipped = (primary_undrawable + secondary_undrawable, primary_shape + secondary_shape)
+    return versions, merged, skipped[0], skipped[1]
 
 
 def build(version):
@@ -302,7 +489,7 @@ def main():
     version = resolve_version(arguments.version)
     marks, published, missing, unreadable = build(version)
 
-    logos_version, color_marks, undrawable, wrong_shape = build_color_marks()
+    color_versions, color_marks, undrawable, wrong_shape = build_color_marks()
     upgraded, added = merge_color(marks, color_marks)
     print(
         f"colour: {len(color_marks)} usable of the SVG Logos set "
@@ -322,12 +509,12 @@ def main():
     licensed = sum(1 for mark in marks if "license" in mark)
     coloured = sum(1 for mark in marks if "layers" in mark)
     document = {
-        "source": "simple-icons + svg-logos",
+        "source": "simple-icons + thesvg-color + svg-logos",
         "sourceVersion": version,
         "sourceURL": "https://github.com/simple-icons/simple-icons",
-        "colorSource": "gilbarbara/logos",
-        "colorSourceVersion": logos_version,
-        "colorSourceURL": "https://github.com/gilbarbara/logos",
+        "colorSource": "thesvg-color + svg-logos",
+        "colorSourceVersion": color_versions,
+        "colorSourceURL": "https://thesvg.org",
         "generatedBy": "Scripts/generate_marks.py",
         "marks": marks,
     }

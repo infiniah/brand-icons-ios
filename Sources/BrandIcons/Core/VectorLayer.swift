@@ -14,8 +14,15 @@ public struct VectorLayer: Hashable, Sendable {
     /// brand tint rather than guessing.
     public let fill: BrandColor?
 
-    public init(path: String, fill: BrandColor?) {
+    /// Whether the layer fills by the even odd rule rather than the non zero winding default.
+    ///
+    /// Not a detail: a mark that punches holes with `fill-rule="evenodd"` and is filled by
+    /// winding instead comes out solid. Duolingo's eyes disappear.
+    public let isEvenOdd: Bool
+
+    public init(path: String, fill: BrandColor?, isEvenOdd: Bool = false) {
         self.path = path
         self.fill = fill
+        self.isEvenOdd = isEvenOdd
     }
 }

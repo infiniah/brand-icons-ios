@@ -152,6 +152,10 @@
       },
       {
         "confidence" : 0.48,
+        "slug" : "inception-labs"
+      },
+      {
+        "confidence" : 0.48,
         "slug" : "saucelabs"
       }
     ],
@@ -188,15 +192,15 @@
       },
       {
         "confidence" : 0.455,
+        "slug" : "firefly-adobe"
+      },
+      {
+        "confidence" : 0.455,
         "slug" : "creativecommons"
       },
       {
         "confidence" : 0.455,
         "slug" : "creativetechnology"
-      },
-      {
-        "confidence" : 0.455,
-        "slug" : "alibabacloud"
       }
     ],
     "normalizedKey" : "adobecreativecloud",

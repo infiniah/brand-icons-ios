@@ -121,10 +121,15 @@ public enum BundledCatalog {
     private struct Layer: Decodable {
         let path: String
         let fill: String?
+        let evenOdd: Bool?
 
         var value: VectorLayer? {
             guard !path.isEmpty else { return nil }
-            return VectorLayer(path: path, fill: fill.flatMap(BrandColor.init(hex:)))
+            return VectorLayer(
+                path: path,
+                fill: fill.flatMap(BrandColor.init(hex:)),
+                isEvenOdd: evenOdd ?? false
+            )
         }
     }
 

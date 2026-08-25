@@ -128,12 +128,13 @@ struct SVGPathParserTests {
             #expect(box.height > 0, "\(mark.slug) has no height")
 
             // Simple Icons art is drawn to a 24 unit grid and a couple of paths overshoot it by
-            // hundredths of a unit. The SVG Logos marks are drawn to their own canvas and a
-            // handful overshoot by a few units, so they get a proportional allowance instead.
-            // Both are far tighter than a mis-parsed path, which lands hundreds of units out.
+            // hundredths of a unit. The colour sets are drawn to their own canvases and a handful
+            // overshoot by a few percent, so they get the same tenth the generator admits them
+            // under. Anything worse than that is rejected before it reaches the catalogue, and a
+            // mis-parsed path lands hundreds of units out rather than a few.
             let tolerance = mark.layers.isEmpty
                 ? 0.1
-                : max(0.1, 0.05 * max(mark.viewBox.width, mark.viewBox.height))
+                : max(0.1, 0.1 * max(mark.viewBox.width, mark.viewBox.height))
             #expect(box.minX >= mark.viewBox.minX - tolerance, "\(mark.slug) overflows left")
             #expect(box.minY >= mark.viewBox.minY - tolerance, "\(mark.slug) overflows top")
             #expect(box.maxX <= mark.viewBox.maxX + tolerance, "\(mark.slug) overflows right")

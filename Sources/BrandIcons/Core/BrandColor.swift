@@ -18,7 +18,9 @@ public struct BrandColor: Hashable, Sendable, Codable {
     /// Parses `#RGB`, `#RRGGBB` or `#RRGGBBAA`, with or without the leading hash.
     public init?(hex: String) {
         var text = hex.hasPrefix("#") ? String(hex.dropFirst()) : hex
-        if text.count == 3 {
+        // `#fff` and `#ffff` are both shorthand, the second carrying alpha. Artwork writes white
+        // both ways, and a parser that rejects either drops the light layer of a two tone mark.
+        if text.count == 3 || text.count == 4 {
             text = text.map { "\($0)\($0)" }.joined()
         }
         guard text.count == 6 || text.count == 8, let value = UInt32(text, radix: 16) else { return nil }

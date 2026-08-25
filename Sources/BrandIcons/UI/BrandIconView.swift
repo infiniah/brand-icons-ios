@@ -52,7 +52,10 @@ public struct BrandIconView: View {
             ZStack {
                 ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
                     BrandVectorShape(pathData: layer.path, viewBox: viewBox)
-                        .fill(layer.fill?.swiftUIColor ?? foreground)
+                        .fill(
+                            layer.fill?.swiftUIColor ?? foreground,
+                            style: FillStyle(eoFill: layer.isEvenOdd)
+                        )
                 }
             }
             .padding(size * 0.14)
