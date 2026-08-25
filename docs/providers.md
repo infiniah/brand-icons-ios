@@ -114,3 +114,18 @@ matters more to you than staying offline, turn a network tier on. If it does not
 still the right brand, and `BrandIconResult.isAmbiguous` will tell you when even that is a guess.
 
 Read the App Store terms note under [Provider tiers](providers.md) before enabling it.
+
+## Why there is no Google Play tier
+
+Apple publishes the iTunes Search API: no key, documented, and reachable from anywhere, which is
+why this package can ask it for artwork on Android as readily as on iOS. The icon it returns is
+the iOS one, and for almost every brand that is the same drawing as the Play listing.
+
+Google publishes no equivalent. The Play Developer API manages apps you already own, and the
+Play EMM API's app search is gated behind enterprise mobility enrolment. Neither is a public
+lookup. What is left is scraping the store's web pages, which the terms forbid and which breaks
+whenever the markup changes, so this package does not do it and will not gain a `.googlePlay`
+source until Google ships something to point it at.
+
+The tier is therefore named for Apple in the UI on both platforms, because "App Store" beside a
+Play Store button reads like a mistake.

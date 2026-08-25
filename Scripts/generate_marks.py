@@ -143,7 +143,6 @@ def color_layers(body):
         fill = LOGOS_FILL.search(attributes)
         layer = {"path": path.group(1).strip(),
                  "fill": fill.group(1).lstrip("#").upper() if fill else None}
-        # Without this a mark drawn with holes fills them in. Duolingo's eyes vanish.
         if 'fill-rule="evenodd"' in attributes:
             layer["evenOdd"] = True
         layers.append(layer)
@@ -240,11 +239,7 @@ def path_extent(data):
             y = y + values[0] if relative else values[0]
             see(x, y)
         elif kind == "a":
-            # An arc bulges away from the straight line between its endpoints, and the endpoint
-            # alone says nothing about how far. The ellipse centre does: the whole arc lies inside
-            # the centre plus or minus the radii. Bounding by the radii around the *endpoints*
-            # instead was tried and threw away half the catalogue, because a circle drawn as two
-            # arcs has endpoints a full diameter apart.
+            # An arc bulges past its endpoints, so the bound comes from the ellipse centre.
             end_x = x + values[5] if relative else values[5]
             end_y = y + values[6] if relative else values[6]
             centre = arc_centre(x, y, end_x, end_y, values[0], values[1],

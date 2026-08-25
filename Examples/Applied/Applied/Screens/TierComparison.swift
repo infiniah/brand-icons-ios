@@ -24,7 +24,7 @@ struct TierComparison: View {
                 if isRunning {
                     ProgressView().controlSize(.mini)
                 } else if let fastest {
-                    Text("fastest \(fastest.source.rawValue)")
+                    Text("fastest \(fastest.source.label)")
                         .font(.system(size: 12))
                         .foregroundStyle(Palette.tertiary)
                 }
@@ -52,14 +52,14 @@ struct TierComparison: View {
         HStack(spacing: 12) {
             BrandIconView(
                 candidate: probe.candidates.first,
-                fallbackText: probe.source.rawValue,
+                fallbackText: probe.source.label,
                 size: 34
             )
             .opacity(probe.candidates.isEmpty ? 0.25 : 1)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(probe.source.rawValue)
+                    Text(probe.source.label)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(Palette.title)
                     if isWinner {
@@ -123,7 +123,7 @@ struct TierComparison: View {
         case .unreadableResponse: "unreadable response"
         case let .rateLimited(retryAfter):
             retryAfter.map { "rate limited, retry in \(Int($0))s" } ?? "rate limited"
-        case let .providerDisabled(source): "\(source.rawValue) is off"
+        case let .providerDisabled(source): "\(source.label) is off"
         case let .transport(message): message
         }
     }

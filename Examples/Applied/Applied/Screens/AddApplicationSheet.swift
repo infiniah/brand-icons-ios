@@ -1,15 +1,11 @@
 import BrandIcons
 import SwiftUI
 
-/// Adds an application, resolving the company's mark live as you type.
+/// Add an application, by finding its icon.
 ///
-/// Composition follows TheFork's "Add a restaurant": a centred title with a circular close, a
-/// search field pinned at the top, then results as rows with a leading square mark and a grey
-/// secondary line. The trailing plus is replaced by the match percentage, because picking the
-/// right brand is the decision here rather than adding an arbitrary row.
-///
-/// This screen is the honest test of the library. Type anything, including a company nobody
-/// bundled, and watch which tier answers and how sure it is.
+/// Built as a search and pick, a sibling of Public's ticker search: a field at the top, then the
+/// matches as full width rows with the mark leading and the selection on the trailing edge, then
+/// one primary action. The per-tier timings sit behind a disclosure.
 struct AddApplicationSheet: View {
     let onAdd: (Application, BrandIconCandidate?) -> Void
 
@@ -27,6 +23,8 @@ struct AddApplicationSheet: View {
     @State private var searchTask: Task<Void, Never>?
     @State private var includesAppStore = false
     @State private var probes: [ProviderProbe] = []
+    @State private var showsComparison = false
+    @State private var showsAllCandidates = false
 
     /// Bundled marks only. Answers instantly, so the list never sits empty while the network
     /// providers are still going.
@@ -46,165 +44,207 @@ struct AddApplicationSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    field
-                    domainField
-                    if !probes.isEmpty || isResolving {
-                        TierComparison(probes: probes, isRunning: isResolving)
-                            .padding(.top, 16)
-                    }
+                VStack(alignment: .leading, spacing: 20) {
+                    companyField
                     results
-                    details
+                    comparison
+                    LabelledField(
+                        label: "Role",
+                        placeholder: "Senior Product Engineer",
+                        text: $role
+                    )
+                    LabelledField(
+                        label: "Website",
+                        placeholder: "figma.com",
+                        text: $domain,
+                        hint: "Optional. A real domain lets the site's own icon outrank a flat mark.",
+                        systemImage: "globe"
+                    )
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .onChange(of: domain) { _, _ in resolve(company) }
+
+                    storeToggle
+                    statusPicker
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 28)
             }
             .background(Palette.canvas)
-            .navigationTitle("Add an application")
+            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle("Add application")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Add", action: add)
-                        .fontWeight(.semibold)
-                        .disabled(company.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .safeAreaInset(edge: .bottom) {
+                Button(action: add) {
+                    Text("Add application")
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
                 }
+                .buttonStyle(.borderedProminent)
+                .disabled(company.trimmingCharacters(in: .whitespaces).count < 2)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(.bar)
             }
         }
     }
 
-    private var field: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(Palette.tertiary)
-            TextField("Company", text: $company)
-                .textInputAutocapitalization(.words)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .onChange(of: company) { _, value in resolve(value) }
+    private var companyField: some View {
+        LabelledField(
+            label: "Company",
+            placeholder: "Search a company",
+            text: $company,
+            hint: "Try Figma, Duolingo or a name off a bank statement",
+            systemImage: "magnifyingglass"
+        ) {
             if isResolving {
                 ProgressView().controlSize(.small)
             } else if !company.isEmpty {
                 Button {
                     company = ""
-                    candidates = []
-                    chosen = nil
+                    pickedManually = false
+                    resolve("")
                 } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(Palette.tertiary)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(Palette.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Palette.hairline, lineWidth: 1)
-        )
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
-    }
-
-    /// Supplying a domain is what exercises the network tiers.
-    ///
-    /// catalogue has never heard of resolves through them and nowhere else. Leaving this
-    /// empty is also a real case: the resolver falls back to guessing the host from the name.
-    private var domainField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "globe")
-                .foregroundStyle(Palette.tertiary)
-            TextField("Domain, optional. monzo.com", text: $domain)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .keyboardType(.URL)
-                .onChange(of: domain) { _, _ in resolve(company) }
+        .textInputAutocapitalization(.words)
+        .autocorrectionDisabled()
+        .submitLabel(.search)
+        .onChange(of: company) { _, value in
+            pickedManually = false
+            resolve(value)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(Palette.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Palette.hairline, lineWidth: 1)
-        )
-        .padding(.horizontal, 16)
-        .padding(.top, 10)
     }
 
+    /// The matches, or an honest account of why there are none.
+    ///
+    /// Three at a time, because a chooser that runs off the screen buries everything under it.
     @ViewBuilder
     private var results: some View {
-        if !candidates.isEmpty {
-            VStack(spacing: 0) {
-                ForEach(candidates) { candidate in
-                    Button {
-                        chosen = candidate
-                        pickedManually = true
-                    } label: {
-                        candidateRow(candidate)
+        if company.trimmingCharacters(in: .whitespaces).count >= 2 {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Icon")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Palette.secondary)
+                    .padding(.leading, 2)
+
+                if candidates.isEmpty {
+                    Text(isResolving ? "Looking…" : "No icon for that name yet. You can still add it.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Palette.secondary)
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Palette.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                } else {
+                    let visible = showsAllCandidates ? candidates : Array(candidates.prefix(3))
+                    VStack(spacing: 0) {
+                        ForEach(Array(visible.enumerated()), id: \.element.id) { index, candidate in
+                            Button {
+                                chosen = candidate
+                                pickedManually = true
+                            } label: {
+                                CandidateRow(candidate: candidate, isSelected: candidate == chosen)
+                            }
+                            .buttonStyle(.plain)
+
+                            if index < visible.count - 1 {
+                                Divider()
+                                    .foregroundStyle(Palette.hairline)
+                                    .padding(.leading, 74)
+                            }
+                        }
+
+                        if candidates.count > 3 {
+                            Button {
+                                showsAllCandidates.toggle()
+                            } label: {
+                                Text(showsAllCandidates ? "Show fewer" : "\(candidates.count - 3) more")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    Divider().foregroundStyle(Palette.hairline).padding(.leading, 72)
+                    .padding(.vertical, 6)
+                    .background(Palette.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
-            .padding(.top, 14)
-        } else if !company.isEmpty, !isResolving {
-            Text("Nothing matched. It will use a lettered tile.")
-                .font(.system(size: 13))
-                .foregroundStyle(Palette.secondary)
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
         }
     }
 
-    private func candidateRow(_ candidate: BrandIconCandidate) -> some View {
-        HStack(spacing: 14) {
-            BrandIconView(candidate: candidate, fallbackText: candidate.title, size: 44)
+    /// One line on how the answer was found, expanding into the per-tier detail.
+    @ViewBuilder
+    private var comparison: some View {
+        if !probes.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) { showsComparison.toggle() }
+                } label: {
+                    HStack {
+                        Text(summary)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Palette.secondary)
+                        Spacer()
+                        Text(showsComparison ? "Hide" : "Compare")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .padding(.horizontal, 2)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(candidate.title)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Palette.title)
-                Text(candidate.source.rawValue)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Palette.secondary)
-            }
-
-            Spacer(minLength: 8)
-
-            Text("\(Int((candidate.confidence * 100).rounded()))%")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(candidate == chosen ? Palette.title : Palette.tertiary)
-
-            if candidate == chosen {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Palette.title)
+                if showsComparison {
+                    TierComparison(probes: probes, isRunning: false)
+                }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .contentShape(Rectangle())
     }
 
-    private var details: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            TextField("Role", text: $role)
-                .textInputAutocapitalization(.words)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .background(Palette.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(Palette.hairline, lineWidth: 1)
-                )
+    private var summary: String {
+        let answered = probes.filter { !$0.candidates.isEmpty }
+        let fastest = answered.min { $0.milliseconds < $1.milliseconds }
+        let base = "\(answered.count) of \(probes.count) sources answered"
+        guard let fastest else { return base }
+        return base + " · fastest \(fastest.milliseconds) ms"
+    }
 
-            Toggle("Also ask the App Store", isOn: $includesAppStore)
-                .font(.system(size: 14))
+    private var storeToggle: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle("Search Apple's App Store", isOn: $includesAppStore)
+                .font(.system(size: 15, weight: .medium))
                 .onChange(of: includesAppStore) { _, _ in resolve(company) }
 
-            Text("Apple limits that endpoint to roughly twenty requests a minute and its terms describe the artwork as promotional material for store content. It is off by default.")
-                .font(.system(size: 11))
+            Text("""
+                Real app artwork, in colour. Apple's on every platform: Google Play publishes no \
+                public search API. Apple limits the endpoint to roughly twenty requests a minute \
+                and its terms describe the artwork as promotional material for store content, so \
+                it is off by default.
+                """)
+                .font(.system(size: 12))
                 .foregroundStyle(Palette.tertiary)
+        }
+        .padding(16)
+        .background(Palette.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var statusPicker: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Status")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Palette.secondary)
+                .padding(.leading, 2)
 
             Picker("Status", selection: $status) {
                 ForEach(ApplicationStatus.allCases, id: \.self) { value in
@@ -213,9 +253,6 @@ struct AddApplicationSheet: View {
             }
             .pickerStyle(.segmented)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 22)
-        .padding(.bottom, 32)
     }
 
     /// Debounced, and resolved in two passes.
@@ -273,15 +310,16 @@ struct AddApplicationSheet: View {
 
             probes = withArt
 
-            // Ranked through `BrandIconResult` rather than by confidence alone, so the App Store
-            // preference applies here too. Sorting on confidence would put Simple Icons' white
-            // outline of Figma above the real coloured app icon, since both are certainly Figma.
+            // Ranked through `BrandIconResult` rather than by confidence alone, so the store
+            // preference applies here too. Sorting on confidence would put the flattened outline
+            // of Figma above the real coloured app icon, since both are certainly Figma.
             let ranked = BrandIconResult(
                 query: trimmed,
                 candidates: withArt.flatMap(\.candidates),
-                preferring: resolver.configuration.effectivePreferredSources
+                preferring: resolver.configuration.effectivePreferredSources,
+                preferenceThreshold: resolver.configuration.preferenceThreshold
             )
-            candidates = Array(ranked.candidates.prefix(8))
+            candidates = Array(ranked.candidates.filter { $0.confidence > 0 }.prefix(8))
             if !pickedManually { chosen = candidates.first }
         }
     }
