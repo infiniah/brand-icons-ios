@@ -120,6 +120,8 @@ The same library, scored against the same fixtures so all of them agree on what 
 | --- | --- |
 | iOS and macOS, Swift | this repository |
 | Android, Kotlin | [infiniah/brand-icons-android](https://github.com/infiniah/brand-icons-android) |
+| Flutter, Dart | [infiniah/brand-icons-flutter](https://github.com/infiniah/brand-icons-flutter) |
+| React Native and Expo, TypeScript | [infiniah/brand-icons-react-native](https://github.com/infiniah/brand-icons-react-native) |
 
 ## Documentation
 
