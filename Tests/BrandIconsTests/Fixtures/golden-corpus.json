@@ -316,6 +316,10 @@
       },
       {
         "confidence" : 0.48,
+        "slug" : "chick-fil-a"
+      },
+      {
+        "confidence" : 0.48,
         "slug" : "keepachangelog"
       },
       {
@@ -348,6 +352,18 @@
       {
         "confidence" : 0.51,
         "slug" : "amazon-connect"
+      },
+      {
+        "confidence" : 0.51,
+        "slug" : "amazon-prime"
+      },
+      {
+        "confidence" : 0.48,
+        "slug" : "amazon-fire-tv"
+      },
+      {
+        "confidence" : 0.465,
+        "slug" : "amazon-web-services-dark"
       }
     ],
     "normalizedKey" : "amazon",
@@ -492,7 +508,10 @@
       "disney"
     ],
     "candidates" : [
-
+      {
+        "confidence" : 1,
+        "slug" : "disney"
+      }
     ],
     "normalizedKey" : "disney",
     "query" : "Disney+"

@@ -6,3 +6,5 @@ DerivedData/
 *.xcuserdatad
 xcuserdata/
 *.xcresult
+__pycache__/
+*.pyc

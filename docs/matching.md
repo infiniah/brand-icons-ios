@@ -54,7 +54,7 @@ key does not even prefix a slug, falls back to scoring the whole catalogue, beca
 misspelling has no shared token and edit distance is exactly what should catch it. That case is
 rare and slow rather than common and slow.
 
-Loading the 4,309 entry catalogue costs roughly 200 milliseconds on a device, paid once. A phone
+Loading the 4,770 entry catalogue costs roughly 200 milliseconds on a device, paid once. A phone
 is slower than every number here: the same parse measured 214 milliseconds on a Pixel emulator in
 a release build, and seconds in a debug one, where the runtime interprets the decode before the
 JIT warms up.

@@ -18,17 +18,23 @@ public struct BrandIconView: View {
     private let fallbackText: String
     private let size: CGFloat
     private let cornerRadius: CGFloat
+    private let surface: Double?
 
+    /// - Parameter surface: How light the ground behind the icon is, 0 for black and 1 for white.
+    ///   A mark too close to it gets a contrasting tile. Defaults to what the colour scheme
+    ///   implies, which is right until you draw on something that is not the system background.
     public init(
         candidate: BrandIconCandidate?,
         fallbackText: String = "",
         size: CGFloat = 40,
-        cornerRadius: CGFloat? = nil
+        cornerRadius: CGFloat? = nil,
+        surface: Double? = nil
     ) {
         self.candidate = candidate
         self.fallbackText = fallbackText
         self.size = size
         self.cornerRadius = cornerRadius ?? size * 0.28
+        self.surface = surface
     }
 
     @Environment(\.colorScheme) private var colorScheme
@@ -92,14 +98,14 @@ public struct BrandIconView: View {
     private var markColors: [BrandColor] {
         switch candidate?.shape {
         case let .vector(_, _, tint): [tint]
-        case let .layeredVector(layers, _): layers.compactMap(\.fill)
+        case let .layeredVector(layers, _): layers.map { $0.fill ?? Self.unsetFillColor }
         default: []
         }
     }
 
     /// The tone the icon is sitting on, as far as the view can tell.
     private var surfaceLuminance: Double {
-        colorScheme == .dark ? 0.08 : 0.96
+        surface ?? (colorScheme == .dark ? 0.08 : 0.96)
     }
 
     /// True when nothing in the mark reads against the surface.
@@ -117,7 +123,9 @@ public struct BrandIconView: View {
     ///
     /// Taking the contrasting foreground instead makes a light layer and an unset one the same
     /// colour, which flattens a two tone mark into one blob.
-    static let unsetFill = Color(red: 0.11, green: 0.11, blue: 0.12)
+    static let unsetFillColor = BrandColor(red: 0x1C, green: 0x1C, blue: 0x1E)
+
+    static let unsetFill = unsetFillColor.swiftUIColor
 
     private var background: Color {
         switch candidate?.shape {

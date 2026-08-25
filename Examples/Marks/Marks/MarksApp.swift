@@ -1,10 +1,10 @@
 import SwiftUI
 
 @main
-struct AppliedApp: App {
+struct MarksApp: App {
     var body: some Scene {
         WindowGroup {
-            ApplicationsScreen()
+            MarksScreen()
         }
     }
 }

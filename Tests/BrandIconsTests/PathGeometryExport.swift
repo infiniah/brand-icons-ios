@@ -12,18 +12,31 @@ import Testing
 /// Run with `BRANDICONS_EXPORT_GOLDEN=1 swift test --filter PathGeometryExport`.
 @Suite("Path geometry")
 struct PathGeometryExport {
-    /// Chosen to exercise the grammar, not to be a popularity list: `duolingo` is the longest
-    /// path in the catalogue, and the arc and smooth curve cases are the ones a port gets wrong.
-    /// Chosen for grammar coverage, and all monochrome.
+    /// One path to pin, either a mark's flattened path or one of its colour layers.
+    struct Reference {
+        let slug: String
+        let layer: Int?
+
+        init(_ slug: String, layer: Int? = nil) {
+            self.slug = slug
+            self.layer = layer
+        }
+    }
+
+    /// Chosen to exercise the grammar, not to be a popularity list. The arc and the two smooth
+    /// curve forms are what a port gets wrong, and these carry every command between them.
     ///
-    /// A mark with colour artwork carries no flattened path, so it has nothing single to pin here.
-    /// The parser is what this fixture exists to hold still, and these exercise arcs, both smooth
-    /// curve forms, quadratics and the shorthand line commands between them.
-    static let slugs = [
-        "elsevier", "phpbb", "composer", "newjapanprowrestling", "unilever",
-        "interactiondesignfoundation", "porsche", "postcss", "gutenberg", "unitednations",
-        "virgin", "openbsd", "libuv", "ritzcarlton", "bentley", "maxplanckgesellschaft",
-        "packagist", "shikimori", "worldhealthorganization", "safari"
+    /// The last two are colour layers rather than flattened paths. Almost every mark in the
+    /// catalogue now carries colour artwork, and no flattened path in it uses the smooth
+    /// quadratic `T`, so pinning only the monochrome ones leaves a command untested.
+    static let references = [
+        Reference("webgl"), Reference("safari"), Reference("udotsdotnews"),
+        Reference("polars"), Reference("pm2"), Reference("linux"), Reference("ollama"),
+        Reference("grafana"), Reference("daisyui"), Reference("jquery"),
+        Reference("dungeonsanddragons"), Reference("zectrix"), Reference("epicgames"),
+        Reference("apachekafka"), Reference("swc"), Reference("styledcomponents"),
+        Reference("cisco"), Reference("json"), Reference("pinia"), Reference("gimp"),
+        Reference("imagetoolbox", layer: 0), Reference("sessionize", layer: 0)
     ]
 
     @Test("Export the reference geometry")
@@ -32,6 +45,8 @@ struct PathGeometryExport {
 
         struct Row: Encodable {
             let slug: String
+            /// Which colour layer this row pins, or nil for the mark's flattened path.
+            let layer: Int?
             let kinds: String
             let bounds: [Double]
             /// Every control and end point, in element order, rounded to three decimals.
@@ -44,9 +59,11 @@ struct PathGeometryExport {
         }
 
         var rows: [Row] = []
-        for slug in Self.slugs {
+        for reference in Self.references {
+            let slug = reference.slug
             let mark = try #require(BundledCatalog.mark(slug: slug), "missing \(slug)")
-            let path = try #require(SVGPathParser.path(from: mark.pathData), "unparsed \(slug)")
+            let data = reference.layer.map { mark.layers[$0].path } ?? mark.pathData
+            let path = try #require(SVGPathParser.path(from: data), "unparsed \(slug)")
 
             var kinds = ""
             var coordinates: [Double] = []
@@ -72,6 +89,7 @@ struct PathGeometryExport {
             rows.append(
                 Row(
                     slug: slug,
+                    layer: reference.layer,
                     kinds: kinds,
                     bounds: [box.minX, box.minY, box.width, box.height]
                         .map { (Double($0) * 1000).rounded() / 1000 },

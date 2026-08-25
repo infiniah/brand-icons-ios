@@ -11,13 +11,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A99100000000000000000003 /* Applied.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Applied.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A99100000000000000000003 /* Marks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marks.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A99100000000000000000006 /* Applied */ = {
+		A99100000000000000000006 /* Marks */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Applied;
+			path = Marks;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -37,7 +37,7 @@
 		A99100000000000000000004 = {
 			isa = PBXGroup;
 			children = (
-				A99100000000000000000006 /* Applied */,
+				A99100000000000000000006 /* Marks */,
 				A99100000000000000000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -45,7 +45,7 @@
 		A99100000000000000000005 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A99100000000000000000003 /* Applied.app */,
+				A99100000000000000000003 /* Marks.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -53,9 +53,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A99100000000000000000002 /* Applied */ = {
+		A99100000000000000000002 /* Marks */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A9910000000000000000000B /* Build configuration list for PBXNativeTarget "Applied" */;
+			buildConfigurationList = A9910000000000000000000B /* Build configuration list for PBXNativeTarget "Marks" */;
 			buildPhases = (
 				A99100000000000000000007 /* Sources */,
 				A99100000000000000000008 /* Frameworks */,
@@ -66,14 +66,14 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A99100000000000000000006 /* Applied */,
+				A99100000000000000000006 /* Marks */,
 			);
-			name = Applied;
+			name = Marks;
 			packageProductDependencies = (
 				A99100000000000000000011 /* BrandIcons */,
 			);
-			productName = Applied;
-			productReference = A99100000000000000000003 /* Applied.app */;
+			productName = Marks;
+			productReference = A99100000000000000000003 /* Marks.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -91,7 +91,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A9910000000000000000000A /* Build configuration list for PBXProject "Applied" */;
+			buildConfigurationList = A9910000000000000000000A /* Build configuration list for PBXProject "Marks" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -108,7 +108,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A99100000000000000000002 /* Applied */,
+				A99100000000000000000002 /* Marks */,
 			);
 		};
 /* End PBXProject section */
@@ -235,7 +235,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Applied;
+				INFOPLIST_KEY_CFBundleDisplayName = Marks;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -245,7 +245,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = tech.infiniah.brandicons.applied;
+				PRODUCT_BUNDLE_IDENTIFIER = tech.infiniah.brandicons.marks;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -263,7 +263,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Applied;
+				INFOPLIST_KEY_CFBundleDisplayName = Marks;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -273,7 +273,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = tech.infiniah.brandicons.applied;
+				PRODUCT_BUNDLE_IDENTIFIER = tech.infiniah.brandicons.marks;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -286,7 +286,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A9910000000000000000000A /* Build configuration list for PBXProject "Applied" */ = {
+		A9910000000000000000000A /* Build configuration list for PBXProject "Marks" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A9910000000000000000000C /* Debug */,
@@ -295,7 +295,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A9910000000000000000000B /* Build configuration list for PBXNativeTarget "Applied" */ = {
+		A9910000000000000000000B /* Build configuration list for PBXNativeTarget "Marks" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A9910000000000000000000E /* Debug */,

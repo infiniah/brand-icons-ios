@@ -48,8 +48,13 @@ THESVG_REGISTRY = "https://registry.npmjs.org/@iconify-json/thesvg-color"
 # the matching Simple Icons entry as `layers`, so the catalogue keeps one row per brand.
 #
 # Only the marks this package can actually draw are taken: a gradient, a mask or a clip path
-# needs a renderer this does not have, and a wordmark is the wrong shape for an icon slot.
-LOGOS_MAX_ASPECT = 2.0
+# needs a renderer this does not have.
+#
+# The aspect cap keeps a long wordmark out of an icon slot. It is not the mechanism that prefers
+# an icon over a wordmark, though: `harvest` already picks the squarest variant a brand ships. So
+# the cap's only effect is on brands that ship nothing else, where the choice is a wide mark or no
+# mark at all. Disney, Hulu and Prime Video are all wordmark only, and absent served nobody.
+LOGOS_MAX_ASPECT = 3.5
 USER_AGENT = "BrandIconsMarkGenerator/1.0"
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -201,23 +206,97 @@ def arc_centre(start_x, start_y, end_x, end_y, rx, ry, degrees, large_arc, sweep
     centre_x = cos_phi * cx1 - sin_phi * cy1 + (start_x + end_x) / 2
     centre_y = sin_phi * cx1 + cos_phi * cy1 + (start_y + end_y) / 2
 
-    # A rotated ellipse needs the larger radius on both axes to stay conservative.
-    reach = max(rx, ry) if degrees else None
-    return centre_x, centre_y, reach or rx, reach or ry
+    start_angle = math.atan2((y1 - cy1) / ry, (x1 - cx1) / rx)
+    end_angle = math.atan2((-y1 - cy1) / ry, (-x1 - cx1) / rx)
+    sweep_angle = end_angle - start_angle
+    if sweep and sweep_angle < 0:
+        sweep_angle += 2 * math.pi
+    elif not sweep and sweep_angle > 0:
+        sweep_angle -= 2 * math.pi
+
+    return centre_x, centre_y, rx, ry, phi, start_angle, sweep_angle
+
+
+def arc_points(start_x, start_y, end_x, end_y, rx, ry, degrees, large_arc, sweep, steps=48):
+    """Points along an SVG arc, or None when it is degenerate.
+
+    Bounding an arc by its centre plus radius bounds the whole ellipse, and a shallow arc off a
+    large radius then measures hundreds of units outside a canvas it never leaves. Walking the
+    swept angle costs nothing at build time and is the difference between keeping a mark and
+    dropping it.
+    """
+    geometry = arc_centre(start_x, start_y, end_x, end_y, rx, ry, degrees, large_arc, sweep)
+    if geometry is None:
+        return None
+
+    centre_x, centre_y, rx, ry, phi, start_angle, sweep_angle = geometry
+    cos_phi, sin_phi = math.cos(phi), math.sin(phi)
+
+    points = []
+    for step in range(steps + 1):
+        angle = start_angle + sweep_angle * step / steps
+        x = rx * math.cos(angle)
+        y = ry * math.sin(angle)
+        points.append((
+            centre_x + cos_phi * x - sin_phi * y,
+            centre_y + sin_phi * x + cos_phi * y,
+        ))
+    return points
+
+
+def bezier_extremes(p0, p1, p2, p3=None):
+    """Where a Bezier actually reaches on one axis, control points excluded.
+
+    A curve is contained by its control points but rarely touches them, so bounding it by the
+    hull calls artwork out of bounds that draws perfectly inside the canvas. The real extremes
+    are the endpoints plus whichever roots of the derivative fall inside the span.
+    """
+    points = [p0, p3 if p3 is not None else p2]
+    if p3 is None:
+        denominator = p0 - 2 * p1 + p2
+        if abs(denominator) > 1e-12:
+            t = (p0 - p1) / denominator
+            if 0 < t < 1:
+                u = 1 - t
+                points.append(u * u * p0 + 2 * u * t * p1 + t * t * p2)
+        return points
+
+    a = -p0 + 3 * p1 - 3 * p2 + p3
+    b = 2 * (p0 - 2 * p1 + p2)
+    c = p1 - p0
+
+    roots = []
+    if abs(a) < 1e-12:
+        if abs(b) > 1e-12:
+            roots.append(-c / b)
+    else:
+        discriminant = b * b - 4 * a * c
+        if discriminant >= 0:
+            root = math.sqrt(discriminant)
+            roots.extend(((-b + root) / (2 * a), (-b - root) / (2 * a)))
+
+    for t in roots:
+        if 0 < t < 1:
+            u = 1 - t
+            points.append(
+                u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3
+            )
+    return points
 
 
 def path_extent(data):
-    """A generous bounding box for path data, or None when it cannot be walked.
+    """The box the path actually draws in, or None when it cannot be walked.
 
-    Control points are included, so this over-estimates. That is what it is for: the job is to
-    reject artwork whose coordinates plainly do not belong to the viewBox the set declares, not
-    to measure a curve exactly. Iconify carries a handful of marks whose stated width is a
-    quarter of the geometry inside them, and drawn against that box they land off the canvas.
+    Curves are measured, not bounded by their control points: the job is to reject artwork whose
+    geometry plainly does not belong to the viewBox the set declares, and a hull bound rejects
+    good marks whose control points sit outside a curve that stays in.
     """
     tokens = re.findall(f"{COMMAND.pattern}|{NUMBER.pattern}", data)
     index = 0
-    current = command = None
+    command = None
     x = y = start_x = start_y = 0.0
+    control_x = control_y = None
+    last_kind = None
     lo_x = lo_y = float("inf")
     hi_x = hi_y = float("-inf")
 
@@ -225,6 +304,11 @@ def path_extent(data):
         nonlocal lo_x, lo_y, hi_x, hi_y
         lo_x, lo_y = min(lo_x, px), min(lo_y, py)
         hi_x, hi_y = max(hi_x, px), max(hi_y, py)
+
+    def see_all(xs, ys):
+        for px in xs:
+            for py in ys:
+                see(px, py)
 
     while index < len(tokens):
         token = tokens[index]
@@ -245,37 +329,71 @@ def path_extent(data):
         except ValueError:
             return None
 
+        base_x, base_y = (x, y) if relative else (0.0, 0.0)
+
         if kind == "z":
             x, y = start_x, start_y
+            see(x, y)
         elif kind == "h":
-            x = x + values[0] if relative else values[0]
+            x = base_x + values[0]
             see(x, y)
         elif kind == "v":
-            y = y + values[0] if relative else values[0]
+            y = base_y + values[0]
             see(x, y)
-        elif kind == "a":
-            # An arc bulges past its endpoints, so the bound comes from the ellipse centre.
-            end_x = x + values[5] if relative else values[5]
-            end_y = y + values[6] if relative else values[6]
-            centre = arc_centre(x, y, end_x, end_y, values[0], values[1],
-                                values[2], values[3], values[4])
-            if centre is None:
-                see(end_x, end_y)
-            else:
-                centre_x, centre_y, radius_x, radius_y = centre
-                see(centre_x - radius_x, centre_y - radius_y)
-                see(centre_x + radius_x, centre_y + radius_y)
-            x, y = end_x, end_y
+        elif kind in ("m", "l"):
             see(x, y)
-        else:
-            base_x, base_y = (x, y) if relative else (0.0, 0.0)
-            for pair in range(0, count, 2):
-                see(base_x + values[pair], base_y + values[pair + 1])
-            x = base_x + values[count - 2]
-            y = base_y + values[count - 1]
+            x, y = base_x + values[0], base_y + values[1]
+            see(x, y)
             if kind == "m":
                 start_x, start_y = x, y
                 command = "l" if relative else "L"
+        elif kind in ("c", "s"):
+            if kind == "c":
+                c1x, c1y = base_x + values[0], base_y + values[1]
+                c2x, c2y = base_x + values[2], base_y + values[3]
+                end_x, end_y = base_x + values[4], base_y + values[5]
+            else:
+                # A smooth curve reflects the previous control point through the current one.
+                if last_kind in ("c", "s") and control_x is not None:
+                    c1x, c1y = 2 * x - control_x, 2 * y - control_y
+                else:
+                    c1x, c1y = x, y
+                c2x, c2y = base_x + values[0], base_y + values[1]
+                end_x, end_y = base_x + values[2], base_y + values[3]
+            see_all(bezier_extremes(x, c1x, c2x, end_x), bezier_extremes(y, c1y, c2y, end_y))
+            control_x, control_y = c2x, c2y
+            x, y = end_x, end_y
+        elif kind in ("q", "t"):
+            if kind == "q":
+                cx, cy = base_x + values[0], base_y + values[1]
+                end_x, end_y = base_x + values[2], base_y + values[3]
+            else:
+                if last_kind in ("q", "t") and control_x is not None:
+                    cx, cy = 2 * x - control_x, 2 * y - control_y
+                else:
+                    cx, cy = x, y
+                end_x, end_y = base_x + values[0], base_y + values[1]
+            see_all(bezier_extremes(x, cx, end_x), bezier_extremes(y, cy, end_y))
+            control_x, control_y = cx, cy
+            x, y = end_x, end_y
+        elif kind == "a":
+            end_x = base_x + values[5]
+            end_y = base_y + values[6]
+            points = arc_points(x, y, end_x, end_y, values[0], values[1],
+                                values[2], values[3], values[4])
+            if points is None:
+                see(end_x, end_y)
+            else:
+                for point_x, point_y in points:
+                    see(point_x, point_y)
+            x, y = end_x, end_y
+            see(x, y)
+        else:
+            return None
+
+        if kind not in ("c", "s", "q", "t"):
+            control_x = control_y = None
+        last_kind = kind
 
     if lo_x > hi_x:
         return None
@@ -285,9 +403,9 @@ def path_extent(data):
 def fits(layers, width, height):
     """True when every layer's geometry sits inside the declared canvas, give or take a twentieth.
 
-    Deliberately tighter than the tolerance the test applies. `path_extent` records where an arc
-    *ends*, not how far it bulges on the way, so a mark can pass here and still measure a little
-    outside once the arc is turned into curves. The gap between the two numbers is that headroom.
+    Iconify carries marks whose stated width is a fraction of the geometry inside them, and drawn
+    against that box they land off the canvas. The twentieth is headroom for the difference
+    between the sampled arcs measured here and the curves a port converts them into.
     """
     margin_x = max(1.0, width * 0.05)
     margin_y = max(1.0, height * 0.05)

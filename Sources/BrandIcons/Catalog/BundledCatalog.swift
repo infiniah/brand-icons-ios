@@ -39,7 +39,16 @@ public enum BundledCatalog {
     /// The Simple Icons release the marks were generated from.
     public static var sourceVersion: String { loaded.sourceVersion }
 
-    private static let loaded = Catalog.load()
+    private static let loaded = Catalog.load(.full)
+
+    /// The marks in a particular variant, loaded on first use and held afterwards.
+    ///
+    /// ``all`` is this for ``CatalogVariant/full``.
+    public static func marks(_ variant: CatalogVariant) -> [BundledMark] {
+        variant == .full ? all : compactLoaded.marks
+    }
+
+    private static let compactLoaded = Catalog.load(.compact)
 
     private struct Catalog: Sendable {
         let marks: [BundledMark]
@@ -48,8 +57,10 @@ public enum BundledCatalog {
 
         static let empty = Catalog(marks: [], marksBySlug: [:], sourceVersion: "")
 
-        static func load() -> Catalog {
-            guard let url = Bundle.module.url(forResource: "BrandMarks", withExtension: "json"),
+        static func load(_ variant: CatalogVariant) -> Catalog {
+            guard let url = Bundle.module.url(
+                    forResource: variant.resourceName, withExtension: "json"
+                  ),
                   let data = try? Data(contentsOf: url),
                   let file = try? JSONDecoder().decode(File.self, from: data)
             else { return .empty }

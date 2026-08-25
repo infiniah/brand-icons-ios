@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A99100000000000000000002"
-               BuildableName = "Applied.app"
-               BlueprintName = "Applied"
-               ReferencedContainer = "container:Applied.xcodeproj">
+               BuildableName = "Marks.app"
+               BlueprintName = "Marks"
+               ReferencedContainer = "container:Marks.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A99100000000000000000002"
-            BuildableName = "Applied.app"
-            BlueprintName = "Applied"
-            ReferencedContainer = "container:Applied.xcodeproj">
+            BuildableName = "Marks.app"
+            BlueprintName = "Marks"
+            ReferencedContainer = "container:Marks.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A99100000000000000000002"
-            BuildableName = "Applied.app"
-            BlueprintName = "Applied"
-            ReferencedContainer = "container:Applied.xcodeproj">
+            BuildableName = "Marks.app"
+            BlueprintName = "Marks"
+            ReferencedContainer = "container:Marks.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

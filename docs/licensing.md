@@ -2,7 +2,7 @@
 
 ## Restrictively licensed marks
 
-223 of the 4,309 marks carry recorded terms beyond the set default, some of which forbid commercial use or derivative works,
+223 of the 4,770 marks carry recorded terms beyond the set default, some of which forbid commercial use or derivative works,
 among them `vuedotjs`, `sass`, `cocoapods` and `letsencrypt`. NonCommercial conflicts with
 shipping a paid app. NoDerivatives sits awkwardly with what this package does to every mark,
 which is reparse its path and rescale it.

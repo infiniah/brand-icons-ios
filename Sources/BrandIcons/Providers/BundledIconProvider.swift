@@ -59,7 +59,7 @@ public struct BundledIconProvider: BrandIconProvider {
     ///
     /// `pathData` on a mark that also has layers is the silhouette of the same brand, kept as a
     /// fallback for a caller that wants one tint it can recolour.
-    static func shape(for mark: BundledMark) -> BrandIconShape {
+    public static func shape(for mark: BundledMark) -> BrandIconShape {
         if let colorViewBox = mark.colorViewBox, !mark.layers.isEmpty {
             return .layeredVector(layers: mark.layers, viewBox: colorViewBox)
         }

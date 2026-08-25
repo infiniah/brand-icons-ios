@@ -12,7 +12,7 @@ Providers are consulted cheapest first, and the resolver stops as soon as a cand
 | Favicon | `.favicon` | manifest, then head, then guessed paths | none | raster | 0.35 to 0.65 |
 | App Store | `.appStore` | 1 request, plus 1 for artwork if it was not remembered | none | raster | up to 1.00 |
 
-**Bundled marks** are 4,309 paths compiled into the package, 3,175 of them full colour,
+**Bundled marks** are 4,770 paths compiled into the package, 4,595 of them full colour,
 generated from Simple Icons 16.28.0, theSVG Color and SVG Logos by `Scripts/generate_marks.py`. They need no network, cannot
 be rate limited, and carry the brand's own colour, which is why they are asked first. The whole
 set is 4.70 MB of JSON, 1.92 MB gzipped, and it decodes on first lookup rather than at launch.

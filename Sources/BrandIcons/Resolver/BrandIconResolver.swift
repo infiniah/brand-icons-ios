@@ -26,17 +26,20 @@ public actor BrandIconResolver {
 
     /// The default stack: bundled marks, then the service's own favicon. The App Store provider
     /// is included only when the configuration allows it.
+    /// - Parameter variant: Which set of bundled marks to search. See ``CatalogVariant``.
     public init(
         configuration: ResolverConfiguration = .default,
+        variant: CatalogVariant = .full,
         providers: [any BrandIconProvider]? = nil
     ) {
         self.configuration = configuration
         if let providers {
             self.providers = providers
         } else {
+            let marks = BundledCatalog.marks(variant)
             let catalogue = configuration.excludesRestrictiveLicenses
-                ? BundledCatalog.permissivelyLicensed
-                : BundledCatalog.all
+                ? marks.filter { $0.license?.isRestrictive != true }
+                : marks
             var stack: [any BrandIconProvider] = [BundledIconProvider(marks: catalogue)]
             if configuration.allowsNetwork {
                 stack.append(FaviconProvider())
