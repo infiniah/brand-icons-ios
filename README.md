@@ -20,7 +20,9 @@ lookup keyed on the name finds none of them. This library resolves them offline,
 and tells you how sure it is so you can decide what to do about it.
 
 <p align="center">
-  <img src="docs/images/applied-ios.png" width="340" alt="The example app resolving six companies to their real marks">
+  <img src="docs/images/applied-ios.png" width="260" alt="The example app resolving six companies to their real marks">
+  <img src="docs/images/applied-ios-dark.png" width="260" alt="The same list in dark mode">
+  <img src="docs/images/applied-ios-sheet.png" width="260" alt="Adding an application, with every tier's answer ranked">
 </p>
 
 ## Why not just…
@@ -114,7 +116,7 @@ let resolver = BrandIconResolver(configuration: .offline)
 
 The same library, scored against the same fixtures so all of them agree on what a name means.
 
-| | |
+| Platform | Repository |
 | --- | --- |
 | iOS and macOS, Swift | this repository |
 | Android, Kotlin | [infiniah/brand-icons-android](https://github.com/infiniah/brand-icons-android) |
