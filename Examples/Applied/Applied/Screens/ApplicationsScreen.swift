@@ -10,7 +10,7 @@ import SwiftUI
 struct ApplicationsScreen: View {
     @State private var model = ApplicationsModel()
     @State private var editing: Application?
-    @State private var isAdding = false
+    @State private var isAdding = ProcessInfo.processInfo.arguments.contains("-openAddSheet")
 
     var body: some View {
         NavigationStack {
@@ -23,8 +23,6 @@ struct ApplicationsScreen: View {
 
                     card
                         .padding(.horizontal, 16)
-
-                    footnote
                 }
                 .padding(.vertical, 12)
             }
@@ -75,13 +73,6 @@ struct ApplicationsScreen: View {
         .background(Palette.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
-    private var footnote: some View {
-        Text("Tap any icon to see every candidate the resolver found.")
-            .font(.system(size: 12))
-            .foregroundStyle(Palette.tertiary)
-            .padding(.horizontal, 20)
-            .padding(.top, 4)
-    }
 }
 
 #Preview("Applications") {

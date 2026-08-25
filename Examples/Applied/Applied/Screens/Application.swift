@@ -17,60 +17,46 @@ struct Application: Identifiable, Hashable {
 
         return [
             Application(
-                company: "Linear",
-                domain: "linear.app",
-                role: "Senior iOS Engineer",
-                status: .interview,
-                appliedOn: daysAgo(3)
-            ),
-            Application(
                 company: "Figma",
                 domain: "figma.com",
-                role: "Platform Engineer, Design Systems",
-                status: .applied,
-                appliedOn: daysAgo(6)
-            ),
-            Application(
-                company: "Stripe",
-                domain: "stripe.com",
-                role: "Mobile Infrastructure",
-                status: .offer,
-                appliedOn: daysAgo(21)
-            ),
-            Application(
-                company: "NOTION LABS INC",
-                domain: nil,
-                role: "iOS Engineer",
-                status: .applied,
-                appliedOn: daysAgo(9)
-            ),
-            Application(
-                company: "Apple",
-                domain: nil,
-                role: "SwiftUI Frameworks",
-                status: .rejected,
-                appliedOn: daysAgo(34)
+                role: "Senior Product Engineer",
+                status: .interview,
+                appliedOn: daysAgo(2)
             ),
             Application(
                 company: "Duolingo",
                 domain: "duolingo.com",
-                role: "Senior Engineer, Learning",
+                role: "Android Engineer, Learning",
+                status: .applied,
+                appliedOn: daysAgo(5)
+            ),
+            Application(
+                company: "Spotify",
+                domain: "spotify.com",
+                role: "Engineering Manager, Playback",
+                status: .offer,
+                appliedOn: daysAgo(8)
+            ),
+            Application(
+                company: "Microsoft",
+                domain: "microsoft.com",
+                role: "Principal SWE, Developer Division",
+                status: .applied,
+                appliedOn: daysAgo(9)
+            ),
+            Application(
+                company: "Notion",
+                domain: "notion.so",
+                role: "Product Engineer, Databases",
+                status: .rejected,
+                appliedOn: daysAgo(14)
+            ),
+            Application(
+                company: "GitHub",
+                domain: "github.com",
+                role: "Staff Engineer, Actions",
                 status: .interview,
-                appliedOn: daysAgo(12)
-            ),
-            Application(
-                company: "Monzo Bank Ltd",
-                domain: "monzo.com",
-                role: "iOS Engineer, Payments",
-                status: .applied,
-                appliedOn: daysAgo(2)
-            ),
-            Application(
-                company: "Hypercorrect Labs",
-                domain: nil,
-                role: "Founding Engineer",
-                status: .applied,
-                appliedOn: daysAgo(1)
+                appliedOn: daysAgo(21)
             )
         ]
     }()

@@ -7,10 +7,12 @@ import SwiftUI
 /// BrandIconView(candidate: best, size: 40)
 /// ```
 ///
-/// A vector candidate is rendered as a filled path on its brand colour. A raster candidate is
-/// decoded as an image. When `candidate` is nil the view draws the first letter of `fallbackText`
-/// on a tint derived from that text, which keeps a list from developing holes while lookups
-/// are still in flight.
+/// A vector candidate is drawn in its own colours. A raster candidate is decoded as an image.
+/// When `candidate` is nil the view draws the first letter of `fallbackText` on a tint derived
+/// from that text, which keeps a list from developing holes while lookups are still in flight.
+///
+/// A mark too close in tone to the surface behind it gets a contrasting tile, so a near black
+/// mark such as GitHub's stays visible in dark mode.
 public struct BrandIconView: View {
     private let candidate: BrandIconCandidate?
     private let fallbackText: String
@@ -29,6 +31,8 @@ public struct BrandIconView: View {
         self.cornerRadius = cornerRadius ?? size * 0.28
     }
 
+    @Environment(\.colorScheme) private var colorScheme
+
     public var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(background)
@@ -41,24 +45,22 @@ public struct BrandIconView: View {
     @ViewBuilder
     private var content: some View {
         switch candidate?.shape {
-        case let .vector(path, viewBox, _):
+        case let .vector(path, viewBox, tint):
             BrandVectorShape(pathData: path, viewBox: viewBox)
-                .fill(foreground)
-                .padding(size * 0.22)
+                .fill(tint.swiftUIColor)
+                .padding(inset)
         case let .layeredVector(layers, viewBox):
             // Painted back to front in the order the artwork lists them, each in its own fill.
-            // A layer without one takes the foreground, which is what a single colour mark that
-            // happens to arrive as layers should look like.
             ZStack {
                 ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
                     BrandVectorShape(pathData: layer.path, viewBox: viewBox)
                         .fill(
-                            layer.fill?.swiftUIColor ?? foreground,
+                            layer.fill?.swiftUIColor ?? Self.unsetFill,
                             style: FillStyle(eoFill: layer.isEvenOdd)
                         )
                 }
             }
-            .padding(size * 0.14)
+            .padding(inset)
         case let .raster(data):
             rasterImage(data)
         case .none:
@@ -86,18 +88,52 @@ public struct BrandIconView: View {
         return BrandIconView.derivedTint(for: fallbackText)
     }
 
-    private var background: Color {
-        if case .raster = candidate?.shape { return .clear }
-        // Multi colour artwork already carries its own palette, so painting it onto a brand
-        // tinted tile would fight it. It sits on nothing, the way a real app icon does.
-        if candidate?.shape?.isMultiColor == true { return .clear }
-        return brandColor.swiftUIColor
+    /// Every colour the mark is actually painted in.
+    private var markColors: [BrandColor] {
+        switch candidate?.shape {
+        case let .vector(_, _, tint): [tint]
+        case let .layeredVector(layers, _): layers.compactMap(\.fill)
+        default: []
+        }
     }
 
-    /// White unless the tile is genuinely light.
+    /// The tone the icon is sitting on, as far as the view can tell.
+    private var surfaceLuminance: Double {
+        colorScheme == .dark ? 0.08 : 0.96
+    }
+
+    /// True when nothing in the mark reads against the surface.
+    private var needsTile: Bool {
+        let colors = markColors
+        guard !colors.isEmpty else { return false }
+        return colors.allSatisfy { abs($0.relativeLuminance - surfaceLuminance) < 0.22 }
+    }
+
+    private var inset: CGFloat {
+        needsTile ? size * 0.18 : 0
+    }
+
+    /// What SVG paints a path with no `fill` attribute.
     ///
-    /// Brands overwhelmingly put a white mark on their own colour, so a pure contrast
-    /// maximisation picks the wrong foreground on mid tones such as Spotify green.
+    /// Taking the contrasting foreground instead makes a light layer and an unset one the same
+    /// colour, which flattens a two tone mark into one blob.
+    static let unsetFill = Color(red: 0.11, green: 0.11, blue: 0.12)
+
+    private var background: Color {
+        switch candidate?.shape {
+        case .none:
+            return brandColor.swiftUIColor
+        case .raster:
+            return .clear
+        default:
+            guard needsTile else { return .clear }
+            // Light behind a dark mark, dark behind a light one.
+            let dark = markColors.allSatisfy { $0.relativeLuminance < 0.5 }
+            return dark ? Color(white: 0.95) : Color(white: 0.11)
+        }
+    }
+
+    /// The monogram colour, against the derived tile a nil candidate gets.
     private var foreground: Color {
         brandColor.relativeLuminance >= 0.53 ? Color(white: 0.06) : .white
     }

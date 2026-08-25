@@ -10,7 +10,7 @@ struct AddApplicationSheet: View {
     let onAdd: (Application, BrandIconCandidate?) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var company = ""
+    @State private var company = ProcessInfo.processInfo.environment["APPLIED_QUERY"] ?? ""
     @State private var domain = ""
     @State private var role = ""
     @State private var status = ApplicationStatus.applied
@@ -21,7 +21,8 @@ struct AddApplicationSheet: View {
     @State private var pickedManually = false
     @State private var isResolving = false
     @State private var searchTask: Task<Void, Never>?
-    @State private var includesAppStore = false
+    @State private var includesAppStore =
+        ProcessInfo.processInfo.environment["APPLIED_APP_STORE"] == "1"
     @State private var probes: [ProviderProbe] = []
     @State private var showsComparison = false
     @State private var showsAllCandidates = false
@@ -79,6 +80,9 @@ struct AddApplicationSheet: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
+            }
+            .task {
+                if !company.isEmpty { resolve(company) }
             }
             .safeAreaInset(edge: .bottom) {
                 Button(action: add) {

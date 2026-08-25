@@ -28,13 +28,6 @@ struct ApplicationRow: View {
                     .font(.system(size: 13))
                     .foregroundStyle(Palette.secondary)
                     .lineLimit(1)
-
-                if let caption = resolution.caption {
-                    Text(caption)
-                        .font(.system(size: 11))
-                        .foregroundStyle(Palette.tertiary)
-                        .lineLimit(1)
-                }
             }
 
             Spacer(minLength: 8)
