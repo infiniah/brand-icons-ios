@@ -6,35 +6,57 @@
 [![SPM](https://img.shields.io/badge/SPM-compatible-orange?style=flat-square)](https://swift.org/package-manager/)
 [![License](https://img.shields.io/badge/license-MIT-black?style=flat-square)](LICENSE)
 
-**Turn a messy service name into a brand icon, with a confidence score you can act on.**
+**You have a messy string. You need the right brand icon. That is the whole problem.**
 
-`NETFLIX.COM`, `APPLE.COM/BILL SPOTIFY` and `SQ *BLUE BOTTLE` are what a bank statement actually
-looks like. BrandIcons resolves names like those to ranked candidates, offline, in microseconds.
-
-```swift
-let resolver = BrandIconResolver()
-let result = await resolver.resolve("APPLE.COM/BILL SPOTIFY")
-
-result.best(minimum: 0.8)   // Spotify, 0.90
+```
+"APPLE.COM/BILL SPOTIFY"   →   Spotify      0.90
+"SQ *BLUE BOTTLE"          →   nothing      —
+"NOTION LABS INC"          →   Notion       0.81
+"Apple One"                →   ambiguous, ask the user
 ```
 
-## Features
+Those are real bank statement descriptors. Exact matching finds none of them. A `Dictionary`
+lookup keyed on the name finds none of them. This library resolves them offline, in microseconds,
+and tells you how sure it is so you can decide what to do about it.
 
-- **3,453 marks compiled in.** No network, no CDN, no rate limit, no key.
-- **A score you can act on.** Built from token overlap and structure, not one fuzzy distance, so
-  you can set a threshold and know what it means.
-- **Says when it isn't sure.** `isAmbiguous()` is the signal to show a chooser instead of guessing.
-- **Optional network tiers.** The App Store and a site's own favicon, off by default.
-- **Fast.** 4.6 µs per lookup after the catalogue loads.
-- **Swift 6, strict concurrency**, zero dependencies.
+<p align="center">
+  <img src="docs/images/applied-ios.png" width="340" alt="The example app resolving six companies to their real marks">
+</p>
 
-## Installation
+## Why not just…
+
+**…ship an icon set and look up by name?** An icon set gives you files. It does not answer "which
+brand is `APPLE.COM/BILL SPOTIFY`", which is the actual work. You would end up writing the
+normaliser, the scorer and the tie-breaking yourself, which is what this is.
+
+**…call a logo API?** It costs money per lookup, needs a key, breaks when it is down, and tells a
+third party every company name your users type. This runs offline with nothing compiled in but a
+JSON file.
+
+**…use the App Store search?** You can, and this wraps it as an optional tier. But it is rate
+limited to about twenty requests a minute, it needs a network, and Apple's terms describe that
+artwork as promotional material for store content. It is off by default for those reasons.
+
+**…just take the top match?** That is how you silently draw the wrong logo. `Apple One` matches
+`Apple`, `Apple TV` and `Apple Music` almost equally well, and the honest answer is to ask. The
+score exists so you can tell those cases apart.
+
+## What you get
+
+- **4,309 marks compiled in**, 3,175 of them in full colour. No network, no key, no rate limit.
+- **A score you can act on**, built from token overlap and structure rather than one fuzzy distance.
+- **`isAmbiguous()`**, so a coin-flip becomes a chooser instead of a wrong icon.
+- **Optional network tiers**: Apple's App Store, and the site's own favicon.
+- 4.6 µs per lookup once the catalogue is loaded.
+- Swift 6, strict concurrency, zero dependencies.
+
+## Install
 
 ```swift
 .package(url: "https://github.com/infiniah/brand-icons-ios", from: "1.0.0")
 ```
 
-## Usage
+## Use
 
 ```swift
 import BrandIcons
@@ -55,12 +77,12 @@ To draw the answer:
 BrandIconView(candidate: icon, fallbackText: application.company, size: 40)
 ```
 
-When `candidate` is nil the view draws a monogram, so a list never develops holes while lookups
-are in flight.
+When `candidate` is nil it draws a monogram, so a list never develops holes while lookups are in
+flight.
 
 ## Acting on the score
 
-The number answers *is this the right brand*, so pick a threshold from what a wrong answer costs.
+Pick a threshold from what a wrong answer costs you.
 
 ```swift
 let result = await resolver.resolve("Apple One")
@@ -79,19 +101,23 @@ if let best = result.best(minimum: 0.8) {
 | 0.42 – 0.60 | the brand is more specific than the query. `Apple` is not `Apple TV` |
 | below 0.35 | discarded rather than returned |
 
-See [docs/matching.md](docs/matching.md) for how the score is built.
-
 ## Offline by default
 
 The bundled catalogue answers first and the resolver stops as soon as a candidate is good enough,
-so a name it knows never opens a socket. To guarantee that:
+so a name it knows never opens a socket. To guarantee it:
 
 ```swift
 let resolver = BrandIconResolver(configuration: .offline)
 ```
 
-The network tiers exist for what a monochrome catalogue cannot serve. See
-[docs/providers.md](docs/providers.md).
+## Other platforms
+
+The same library, scored against the same fixtures so all of them agree on what a name means.
+
+| | |
+| --- | --- |
+| iOS and macOS, Swift | this repository |
+| Android, Kotlin | [infiniah/brand-icons-android](https://github.com/infiniah/brand-icons-android) |
 
 ## Documentation
 
@@ -100,9 +126,7 @@ The network tiers exist for what a monochrome catalogue cannot serve. See
 | [Provider tiers](docs/providers.md) | what each source costs, and when a bundled mark is the wrong picture |
 | [Configuration](docs/configuration.md) | every option, and ranking by preferred source |
 | [How matching works](docs/matching.md) | the scoring bands, lookup cost, and measuring against your own names |
-| [Licensing the marks](docs/licensing.md) | CC0, trademark, and the thirteen restrictive marks |
-
-API reference: build the DocC catalogue with `swift package generate-documentation`.
+| [Licensing the marks](docs/licensing.md) | CC0, MIT, trademark, and the restrictive handful |
 
 ## Example app
 
