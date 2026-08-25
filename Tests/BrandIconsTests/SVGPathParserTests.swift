@@ -118,7 +118,7 @@ struct SVGPathParserTests {
     func bundledMarksStayInsideTheirViewBox() throws {
         #expect(!BundledCatalog.all.isEmpty)
 
-        for mark in BundledCatalog.all {
+        for mark in BundledCatalog.all where !mark.pathData.isEmpty {
             let path = SVGPathParser.path(from: mark.pathData)
             let parsed = try #require(path, "\(mark.slug) did not parse")
             #expect(!parsed.isEmpty, "\(mark.slug) parsed into nothing")
@@ -148,7 +148,8 @@ struct SVGPathParserTests {
     )
     func namedMarks(slug: String) throws {
         let mark = try #require(BundledCatalog.mark(slug: slug))
-        let path = try #require(SVGPathParser.path(from: mark.pathData))
+        // A mark with colour artwork has no flattened path, so the shape is what to parse.
+        let path = try #require(BundledIconProvider.shape(for: mark).cgPath)
         #expect(!path.isEmpty)
         #expect(path.boundingBoxOfPath.width > 1)
     }

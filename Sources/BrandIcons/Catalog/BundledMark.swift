@@ -10,6 +10,8 @@ public struct BundledMark: Hashable, Sendable {
     public let title: String
 
     /// SVG path data in the coordinate space of ``viewBox``.
+    ///
+    /// Empty when the mark has colour ``layers``, which are drawn instead.
     public let pathData: String
 
     /// The coordinate space ``pathData`` is drawn in.

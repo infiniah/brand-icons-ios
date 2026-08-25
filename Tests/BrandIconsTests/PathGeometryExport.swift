@@ -14,12 +14,16 @@ import Testing
 struct PathGeometryExport {
     /// Chosen to exercise the grammar, not to be a popularity list: `duolingo` is the longest
     /// path in the catalogue, and the arc and smooth curve cases are the ones a port gets wrong.
+    /// Chosen for grammar coverage, and all monochrome.
+    ///
+    /// A mark with colour artwork carries no flattened path, so it has nothing single to pin here.
+    /// The parser is what this fixture exists to hold still, and these exercise arcs, both smooth
+    /// curve forms, quadratics and the shorthand line commands between them.
     static let slugs = [
-        "netflix", "spotify", "figma", "duolingo", "notion", "github", "x", "apple",
-        "dropbox", "discord", "steam", "hbomax", "vuedotjs",
-        // Grammar cases rather than famous brands. `1password` is the only mark carrying arcs,
-        // quadratics and smooth cubics at once; the rest each isolate one form a port gets wrong.
-        "1password", "1dot1dot1dot1", "500px", "express", "apachelucene", "4chan", "ada"
+        "elsevier", "phpbb", "composer", "newjapanprowrestling", "unilever",
+        "interactiondesignfoundation", "porsche", "postcss", "gutenberg", "unitednations",
+        "virgin", "openbsd", "libuv", "ritzcarlton", "bentley", "maxplanckgesellschaft",
+        "packagist", "shikimori", "worldhealthorganization", "safari"
     ]
 
     @Test("Export the reference geometry")

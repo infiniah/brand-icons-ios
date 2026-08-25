@@ -80,7 +80,9 @@ public enum BundledCatalog {
     private struct Entry: Decodable {
         let slug: String
         let title: String
-        let path: String
+        /// Absent on a mark that has colour layers, because the flattened silhouette is never
+        /// drawn for one and carrying it cost three megabytes of geometry nothing rendered.
+        let path: String?
         let viewBox: [Double]
         let tint: String
         let layers: [Layer]?
@@ -88,8 +90,7 @@ public enum BundledCatalog {
         let license: License?
 
         var mark: BundledMark? {
-            guard !slug.isEmpty, !path.isEmpty, viewBox.count == 4,
-                  viewBox[2] > 0, viewBox[3] > 0,
+            guard !slug.isEmpty, viewBox.count == 4, viewBox[2] > 0, viewBox[3] > 0,
                   let tint = BrandColor(hex: tint)
             else { return nil }
 
@@ -100,10 +101,13 @@ public enum BundledCatalog {
             let resolvedBox = Self.rect(colorViewBox)
             let usableColor = !resolvedLayers.isEmpty && resolvedBox != nil
 
+            // A mark has to be drawable one way or the other.
+            guard !(path?.isEmpty ?? true) || usableColor else { return nil }
+
             return BundledMark(
                 slug: slug,
                 title: title,
-                pathData: path,
+                pathData: path ?? "",
                 viewBox: CGRect(x: viewBox[0], y: viewBox[1], width: viewBox[2], height: viewBox[3]),
                 tint: tint,
                 layers: usableColor ? resolvedLayers : [],

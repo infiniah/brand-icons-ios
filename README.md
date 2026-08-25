@@ -6,28 +6,14 @@
 [![SPM](https://img.shields.io/badge/SPM-compatible-orange?style=flat-square)](https://swift.org/package-manager/)
 [![License](https://img.shields.io/badge/license-MIT-black?style=flat-square)](LICENSE)
 
-**A fast, reliable way to get brand icons. No API, no key, no network.**
+**Brand icons, instantly, with no network call.**
 
-Getting a company's logo normally means calling somebody's service. That is a round trip you wait
-on, a key you have to keep, a bill that scales with your users, a rate limit, and a dependency that
-can go down or disappear. It also means telling a third party every company name your users look at.
+Fetching a company logo normally means someone else's API: a round trip you wait on, a key to
+keep, a bill that grows with your users, a rate limit, an outage you cannot fix, and a third party
+who now knows every company your users look at.
 
-This is a local lookup instead. **4,309 marks are compiled into the binary**, so a name the
-catalogue knows resolves in about **10 microseconds** and cannot fail, rate limit, or phone anyone.
-It works on a plane.
-
-Because it is a resolver rather than a file lookup, it also handles the names you actually have
-rather than the ones you wish you had:
-
-```
-"APPLE.COM/BILL SPOTIFY"   →   Spotify      1.00
-"NOTION LABS INC"          →   Notion       0.81
-"SQ *BLUE BOTTLE"          →   nothing      —
-"Amazon"                   →   two sub brands tie, ask the user
-```
-
-Every answer carries a score, so you decide what to do when it is not sure instead of silently
-drawing the wrong logo.
+This is a local lookup. **4,309 brands are compiled in**, so an icon costs about **10 microseconds**
+and cannot fail, throttle, or phone anyone. It works offline.
 
 <p align="center">
   <img src="docs/images/applied-ios.png" width="260" alt="The example app resolving six companies to their real marks">
@@ -90,6 +76,34 @@ BrandIconView(candidate: icon, fallbackText: application.company, size: 40)
 
 When `candidate` is nil it draws a monogram, so a list never develops holes while lookups are in
 flight.
+
+## What it costs your app
+
+The catalogue is the whole point and the whole weight: it is vector geometry for 4,309 brands, and
+nothing else in the package is measurable beside it.
+
+| | brands | in your bundle |
+| --- | --- | --- |
+| full | 4,309 | **2.44 MB** |
+| compact | 4,087 | **1.65 MB** |
+
+Those are the compressed sizes, which is what an app store actually ships.
+
+The compact catalogue leaves out 222 marks whose path data runs past 4 KB. Those are
+illustrations rather than icons, detailed enough to be mush at 40 points, and they are what makes
+the difference. Everything else is identical, including every score.
+
+## It takes the names you actually have
+
+The lookup is a resolver, not a filename match, so a string that came off a bank statement or a
+user's typing still finds the brand:
+
+```
+"APPLE.COM/BILL SPOTIFY"   →   Spotify      1.00
+"NOTION LABS INC"          →   Notion       0.81
+"SQ *BLUE BOTTLE"          →   nothing      —
+"Amazon"                   →   two sub brands tie, ask the user
+```
 
 ## Acting on the score
 

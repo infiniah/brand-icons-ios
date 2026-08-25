@@ -99,11 +99,7 @@ struct BrandIconShapeCGPathTests {
     @Test("A real mark fits the rect it is given")
     func realMarkFits() throws {
         let mark = try #require(BundledCatalog.mark(slug: "spotify"))
-        let shape = BrandIconShape.vector(
-            path: mark.pathData,
-            viewBox: mark.viewBox,
-            tint: mark.tint
-        )
+        let shape = BundledIconProvider.shape(for: mark)
         let rect = CGRect(x: 0, y: 0, width: 60, height: 60)
         let path = try #require(shape.cgPath(fitting: rect))
         let box = path.boundingBoxOfPath

@@ -54,6 +54,21 @@ USER_AGENT = "BrandIconsMarkGenerator/1.0"
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT = os.path.join(ROOT, "Sources", "BrandIcons", "Resources", "BrandMarks.json")
+COMPACT_OUTPUT = os.path.join(ROOT, "Sources", "BrandIcons", "Resources", "BrandMarksCompact.json")
+
+# Coordinates are trimmed to this many decimals. Every mark is drawn inside a viewBox of 24 to 512
+# units, so the third decimal is far below a pixel at any size an icon is shown, and it costs real
+# bytes in every app that ships the catalogue.
+COORDINATE_PLACES = 2
+
+# A mark whose path data is larger than this is an illustration rather than an icon: it will be
+# mush at 40 points and it is what makes the catalogue heavy. The compact catalogue leaves them out.
+COMPACT_MAX_PATH_BYTES = 4 * 1024
+
+# SVG lets a number omit its leading zero and lets numbers run together, so `.0741.0741` is two
+# of them. A naive `\d+\.\d+` matches `0741.0741` straight across the boundary and rewrites two
+# coordinates as one, off by a factor of ten. This follows the grammar instead.
+SVG_NUMBER = re.compile(r"[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?")
 
 VIEW_BOX = re.compile(r'viewBox="([^"]+)"')
 PATH_DATA = re.compile(r'\sd="([^"]+)"')
@@ -476,6 +491,63 @@ def merge_color(marks, color_marks):
     return upgraded, added
 
 
+def trim_precision(path_data, places=COORDINATE_PLACES):
+    """Rounds every coordinate, dropping digits no icon size can express.
+
+    Integers are returned untouched. An arc's two flags may be written `00` with no separator, and
+    reformatting that as a single number would delete one of them.
+    """
+    def shorten(match):
+        token = match.group(0)
+        if "." not in token:
+            return token
+        text = f"{float(token):.{places}f}"
+        whole, _, fraction = text.partition(".")
+        fraction = fraction.rstrip("0")
+        return f"{whole}.{fraction}" if fraction else whole
+
+    return SVG_NUMBER.sub(shorten, path_data)
+
+
+def trim_verified(path_data):
+    """Trims a path, and keeps the original when the trim would move the drawing.
+
+    The rewrite is textual and the grammar is full of traps, so every path is parsed before and
+    after and the result compared. A mark that does not survive keeps its full precision rather
+    than being shipped subtly wrong.
+    """
+    trimmed = trim_precision(path_data)
+    before = path_extent(path_data)
+    after = path_extent(trimmed)
+    if before is None or after is None:
+        return path_data
+    if max(abs(a - b) for a, b in zip(before, after)) > 0.05:
+        return path_data
+    return trimmed
+
+
+def slim(mark):
+    """Drops the monochrome path a colour mark never draws.
+
+    A mark with `layers` is always drawn from them, so carrying the flattened silhouette as well
+    was three megabytes of geometry nothing rendered. Marks without colour keep their path, which
+    is the only thing they have.
+
+    Coordinates are deliberately left at full precision. Rounding them saves about a tenth of the
+    compressed size and rewrites path data textually, in a grammar where `.0741.0741` is two
+    numbers rather than one. That trade is not worth a silently misplaced coordinate.
+    """
+    mark = dict(mark)
+    if mark.get("layers"):
+        mark.pop("path", None)
+    return mark
+
+
+def path_bytes(mark):
+    total = len(mark.get("path", "").encode("utf-8"))
+    return total + sum(len(layer["path"].encode("utf-8")) for layer in mark.get("layers", []))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Regenerate BrandMarks.json from Simple Icons.")
     parser.add_argument("--version", help="simple-icons npm version, defaults to latest")
@@ -501,6 +573,9 @@ def main():
         print("no marks produced", file=sys.stderr)
         return 1
 
+    marks = [slim(mark) for mark in marks]
+    compact = [mark for mark in marks if path_bytes(mark) <= COMPACT_MAX_PATH_BYTES]
+
     licensed = sum(1 for mark in marks if "license" in mark)
     coloured = sum(1 for mark in marks if "layers" in mark)
     document = {
@@ -518,6 +593,18 @@ def main():
     with open(OUTPUT, "w", encoding="utf-8") as handle:
         json.dump(document, handle, ensure_ascii=False, separators=(",", ":"), sort_keys=False)
         handle.write("\n")
+
+    with open(COMPACT_OUTPUT, "w", encoding="utf-8") as handle:
+        json.dump({**document, "marks": compact}, handle,
+                  ensure_ascii=False, separators=(",", ":"), sort_keys=False)
+        handle.write("\n")
+
+    print(
+        f"compact catalogue: {len(compact)} marks, {len(marks) - len(compact)} left out for being "
+        f"larger than {COMPACT_MAX_PATH_BYTES // 1024} KB of path data, "
+        f"{os.path.getsize(COMPACT_OUTPUT)} bytes",
+        file=sys.stderr,
+    )
 
     size = os.path.getsize(OUTPUT)
     print(

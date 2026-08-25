@@ -16,7 +16,12 @@ struct BundledCatalogTests {
         for mark in BundledCatalog.all {
             #expect(!mark.slug.isEmpty)
             #expect(!mark.title.isEmpty, "\(mark.slug) has no title")
-            #expect(!mark.pathData.isEmpty, "\(mark.slug) has no path")
+            // A mark is drawn from its colour layers when it has them, and from its flattened
+            // path when it does not. Carrying both was geometry nothing rendered.
+            #expect(
+                !mark.pathData.isEmpty || !mark.layers.isEmpty,
+                "\(mark.slug) has neither a path nor layers"
+            )
             #expect(mark.viewBox.width > 0, "\(mark.slug) has an empty viewBox")
             #expect(mark.viewBox.height > 0, "\(mark.slug) has an empty viewBox")
             #expect(mark.tint.alpha == 255, "\(mark.slug) is not opaque")
@@ -99,14 +104,26 @@ struct BundledCatalogTests {
     @Test("Every mark converts to a shape the renderer can use")
     func marksBecomeShapes() throws {
         for mark in BundledCatalog.all.prefix(40) {
-            let shape = BrandIconShape.vector(
-                path: mark.pathData,
-                viewBox: mark.viewBox,
-                tint: mark.tint
-            )
+            let shape = BundledIconProvider.shape(for: mark)
             #expect(shape.isVector)
-            let path = try #require(shape.cgPath, "\(mark.slug) did not convert")
-            #expect(!path.isEmpty)
+
+            switch shape {
+            case let .vector(path, _, _):
+                let converted = try #require(
+                    SVGPathParser.path(from: path), "\(mark.slug) did not convert"
+                )
+                #expect(!converted.isEmpty)
+            case let .layeredVector(layers, _):
+                #expect(!layers.isEmpty, "\(mark.slug) has no layers")
+                for layer in layers {
+                    let converted = try #require(
+                        SVGPathParser.path(from: layer.path), "\(mark.slug) layer did not convert"
+                    )
+                    #expect(!converted.isEmpty)
+                }
+            case .raster:
+                Issue.record("\(mark.slug) produced a raster shape")
+            }
         }
     }
 }
