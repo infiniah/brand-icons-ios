@@ -44,18 +44,20 @@ Measured on an M-series Mac in a release build:
 
 | Query | Time | Path |
 | --- | --- | --- |
-| `Netflix` | 4.6 microseconds | exact key hit, nothing is scored |
-| `NETFLIX.COM` | 6 microseconds | exact key hit once the TLD is normalised away |
-| `NOTION LABS INC` | 275 microseconds | token shortlist, then scored |
-| a name sharing no token with any mark | 29.7 milliseconds | falls back to the whole catalogue |
+| `Netflix` | 10.6 microseconds | exact key hit, nothing is scored |
+| `NETFLIX.COM` | 16.6 microseconds | exact key hit once the TLD is normalised away |
+| `NOTION LABS INC` | 1.5 milliseconds | token shortlist, then scored |
+| a name sharing no token with any mark | 43.5 milliseconds | falls back to the whole catalogue |
 
 The last row is the one to know about. A query that shares no token with any mark, and whose
 key does not even prefix a slug, falls back to scoring the whole catalogue, because a
 misspelling has no shared token and edit distance is exactly what should catch it. That case is
 rare and slow rather than common and slow.
 
-Loading the 3,453 entry catalogue costs 23 to 25 milliseconds on the same machine, paid by the
-first lookup rather than at launch. A phone will be slower than every number here.
+Loading the 4,309 entry catalogue costs roughly 200 milliseconds on a device, paid once. A phone
+is slower than every number here: the same parse measured 214 milliseconds on a Pixel emulator in
+a release build, and seconds in a debug one, where the runtime interprets the decode before the
+JIT warms up.
 
 ## Measuring the tiers against your own names
 

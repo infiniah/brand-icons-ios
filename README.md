@@ -6,18 +6,28 @@
 [![SPM](https://img.shields.io/badge/SPM-compatible-orange?style=flat-square)](https://swift.org/package-manager/)
 [![License](https://img.shields.io/badge/license-MIT-black?style=flat-square)](LICENSE)
 
-**You have a messy string. You need the right brand icon. That is the whole problem.**
+**A fast, reliable way to get brand icons. No API, no key, no network.**
+
+Getting a company's logo normally means calling somebody's service. That is a round trip you wait
+on, a key you have to keep, a bill that scales with your users, a rate limit, and a dependency that
+can go down or disappear. It also means telling a third party every company name your users look at.
+
+This is a local lookup instead. **4,309 marks are compiled into the binary**, so a name the
+catalogue knows resolves in about **10 microseconds** and cannot fail, rate limit, or phone anyone.
+It works on a plane.
+
+Because it is a resolver rather than a file lookup, it also handles the names you actually have
+rather than the ones you wish you had:
 
 ```
-"APPLE.COM/BILL SPOTIFY"   →   Spotify      0.90
-"SQ *BLUE BOTTLE"          →   nothing      —
+"APPLE.COM/BILL SPOTIFY"   →   Spotify      1.00
 "NOTION LABS INC"          →   Notion       0.81
-"Apple One"                →   ambiguous, ask the user
+"SQ *BLUE BOTTLE"          →   nothing      —
+"Amazon"                   →   two sub brands tie, ask the user
 ```
 
-Those are real bank statement descriptors. Exact matching finds none of them. A `Dictionary`
-lookup keyed on the name finds none of them. This library resolves them offline, in microseconds,
-and tells you how sure it is so you can decide what to do about it.
+Every answer carries a score, so you decide what to do when it is not sure instead of silently
+drawing the wrong logo.
 
 <p align="center">
   <img src="docs/images/applied-ios.png" width="260" alt="The example app resolving six companies to their real marks">
@@ -27,21 +37,20 @@ and tells you how sure it is so you can decide what to do about it.
 
 ## Why not just…
 
-**…ship an icon set and look up by name?** An icon set gives you files. It does not answer "which
-brand is `APPLE.COM/BILL SPOTIFY`", which is the actual work. You would end up writing the
-normaliser, the scorer and the tie-breaking yourself, which is what this is.
+**…call a logo API?** Latency on every icon, a key to manage, a bill per lookup, a rate limit, and
+an outage you cannot fix. This is a function call against memory.
 
-**…call a logo API?** It costs money per lookup, needs a key, breaks when it is down, and tells a
-third party every company name your users type. This runs offline with nothing compiled in but a
-JSON file.
+**…ship an icon set and look these up yourself?** An icon set gives you files, keyed by exact slug.
+It does not answer "which brand is `APPLE.COM/BILL SPOTIFY`". You would end up writing the
+normaliser, the scorer and the tie-breaking, which is what this is.
 
-**…use the App Store search?** You can, and this wraps it as an optional tier. But it is rate
-limited to about twenty requests a minute, it needs a network, and Apple's terms describe that
-artwork as promotional material for store content. It is off by default for those reasons.
+**…use the App Store search?** You can, and this wraps it as an optional tier for the cases a
+monochrome catalogue cannot serve. But it is rate limited to about twenty requests a minute, it
+needs a network, and Apple's terms describe that artwork as promotional material for store content.
+It is off by default for those reasons.
 
-**…just take the top match?** That is how you silently draw the wrong logo. `Apple One` matches
-`Apple`, `Apple TV` and `Apple Music` almost equally well, and the honest answer is to ask. The
-score exists so you can tell those cases apart.
+**…just take the top match?** That is how you silently draw the wrong logo. `Amazon` matches two
+Amazon sub brands at exactly the same score, and the honest answer is to ask.
 
 ## What you get
 
@@ -49,7 +58,7 @@ score exists so you can tell those cases apart.
 - **A score you can act on**, built from token overlap and structure rather than one fuzzy distance.
 - **`isAmbiguous()`**, so a coin-flip becomes a chooser instead of a wrong icon.
 - **Optional network tiers**: Apple's App Store, and the site's own favicon.
-- 4.6 µs per lookup once the catalogue is loaded.
+- About 10 µs for a name the catalogue knows, once it is loaded.
 - Swift 6, strict concurrency, zero dependencies.
 
 ## Install
@@ -87,12 +96,12 @@ flight.
 Pick a threshold from what a wrong answer costs you.
 
 ```swift
-let result = await resolver.resolve("Apple One")
+let result = await resolver.resolve("Amazon")
 
 if let best = result.best(minimum: 0.8) {
     draw(best)                        // confident enough to write down
 } else if result.isAmbiguous() {
-    askTheUser(result.candidates)     // Apple, Apple Music and Apple TV all score alike
+    askTheUser(result.candidates)     // two Amazon sub brands tie exactly
 }
 ```
 
@@ -121,7 +130,7 @@ The same library, scored against the same fixtures so all of them agree on what 
 | iOS and macOS, Swift | this repository |
 | Android, Kotlin | [infiniah/brand-icons-android](https://github.com/infiniah/brand-icons-android) |
 | Flutter, Dart | [infiniah/brand-icons-flutter](https://github.com/infiniah/brand-icons-flutter) |
-| React Native and Expo, TypeScript | [infiniah/brand-icons-react-native](https://github.com/infiniah/brand-icons-react-native) |
+| React Native and Expo, TypeScript | [infiniah/brand-icons-expo](https://github.com/infiniah/brand-icons-expo) |
 
 ## Documentation
 
